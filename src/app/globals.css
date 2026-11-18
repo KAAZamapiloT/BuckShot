@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-bangers: "Bangers", "Impact", "Arial Black", sans-serif;
+  --font-space-grotesk: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --paper-bg: #FAF4E6;
+  --panel-bg: #FFFDF7;
+  --ink: #121218;
+  --ink-muted: #4A4A5A;
+  --crimson: #FF3358;
+  --ki-cyan: #00C2FF;
+  --gold: #FFC82C;
+  --violet: #7C4DFF;
+  --emerald: #00C875;
+  --sakura: #FF6FAE;
+}
+
+/* Color Mode 2: Classic B&W Ink Manga (Only unlocked / active breakthroughs pop with color!) */
+html[data-manga-mode="ink"] {
+  --paper-bg: #F4F1EA;
+  --panel-bg: #FFFFFF;
+}
+html[data-manga-mode="ink"] .manga-color-layer {
+  filter: grayscale(100%) contrast(1.15);
+  transition: filter 0.5s ease;
+}
+html[data-manga-mode="ink"] .manga-unlocked-pop {
+  filter: none !important;
+}
+
+/* Color Mode 3: Midnight Shonen (High-contrast neon ink dark manga spread) */
+html[data-manga-mode="midnight"] {
+  --paper-bg: #12121C;
+  --panel-bg: #1B1B2A;
+  --ink: #F8F4E8;
+  --ink-muted: #B8B8CE;
+}
+
+body {
+  background-color: var(--paper-bg);
+  color: var(--ink);
+  background-image:
+    radial-gradient(rgba(18, 18, 24, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, transparent 49.4%, rgba(18, 18, 24, 0.06) 50%, transparent 50.6%);
+  background-size: 16px 16px, 100% 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html[data-manga-mode="midnight"] body {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, transparent 49.4%, rgba(0, 194, 255, 0.08) 50%, transparent 50.6%);
+}
+
+/* Authentic Manga Panel Framing */
+.manga-panel {
+  background-color: var(--panel-bg);
+  border: 3px solid #121218;
+  box-shadow: 5px 5px 0px #121218;
+  position: relative;
+}
+
+html[data-manga-mode="midnight"] .manga-panel {
+  border-color: #00C2FF;
+  box-shadow: 5px 5px 0px #FF3358;
+}
+
+.manga-panel-sm {
+  background-color: var(--panel-bg);
+  border: 2.5px solid #121218;
+  box-shadow: 3px 3px 0px #121218;
+}
+
+html[data-manga-mode="midnight"] .manga-panel-sm {
+  border-color: #F8F4E8;
+  box-shadow: 3px 3px 0px #00C2FF;
+}
+
+/* Manga Button with Crisp Ink Press */
+.manga-btn {
+  border: 3px solid #121218;
+  box-shadow: 4px 4px 0px #121218;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.manga-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #121218;
+}
+.manga-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px #121218;
+}
+
+/* Ben-Day Halftone Overlay */
+.halftone-dots {
+  background-image: radial-gradient(rgba(18, 18, 24, 0.16) 1.3px, transparent 1.3px);
+  background-size: 7px 7px;
+}
+
+.halftone-cyan {
+  background-image: radial-gradient(rgba(0, 194, 255, 0.22) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+}
+
+.halftone-crimson {
+  background-image: radial-gradient(rgba(255, 51, 88, 0.2) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+}
+
+/* Shonen Radial Speed Lines */
+.speed-lines {
+  background-image: repeating-conic-gradient(
+    from 0deg,
+    rgba(18, 18, 24, 0.05) 0deg 3deg,
+    transparent 3deg 10deg
+  );
+}
+
+/* Ink-to-Color Breakthrough Panel Animation */
+.crux-panel-locked {
+  background: repeating-linear-gradient(
+    -45deg,
+    #EFECE4,
+    #EFECE4 8px,
+    #E5E0D5 8px,
+    #E5E0D5 16px
+  );
+  filter: grayscale(100%);
+  transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.crux-panel-unlocked {
+  filter: grayscale(0%);
+  animation: colorBurst 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes colorBurst {
+  0% {
+    transform: scale(0.95) rotate(-1deg);
+    filter: grayscale(100%) brightness(1.4);
+  }
+  45% {
+    transform: scale(1.03) rotate(0.8deg);
+    filter: grayscale(0%) brightness(1.15);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: grayscale(0%) brightness(1);
+  }
+}
+
+/* Speech Bubble Tail */
+.speech-bubble-left::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 18px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-right: 13px solid #121218;
+}
+.speech-bubble-left::after {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 20px;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 10px solid #FFFDF7;
+}
+
+/* Open Manga Book Center Spine Shadow */
+.book-spread-spine {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(18, 18, 24, 0.08) 40%,
+    rgba(18, 18, 24, 0.22) 50%,
+    rgba(18, 18, 24, 0.08) 60%,
+    transparent 100%
+  );
+}
+
+/* Custom Manga Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #EFE8D8;
+  border-left: 2px solid #121218;
+}
+::-webkit-scrollbar-thumb {
+  background: #FF3358;
+  border: 2px solid #121218;
+}

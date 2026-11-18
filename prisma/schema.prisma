@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model LearnerProfile {
+  id                  String   @id @default("default-runner")
+  codename            String   @default("SHADOW_DEV")
+  rankTitle           String   @default("B-RANK TACTICIAN")
+  overallRating       Int      @default(1480)
+  streakDays          Int      @default(7)
+  xp                  Int      @default(2450)
+  targetCompany       String   @default("Frontier AI Lab / Staff Loop")
+  sprintWeeksLeft     Int      @default(5)
+  topicRatingsJson    String   // JSON record of topic -> 800-3500 rating
+  strengthsJson       String   // JSON string[]
+  weaknessesJson      String   // JSON string[]
+  senseiDirectives    String   @default("Challenge my invariants relentlessly. Never hand me full code before I prove complexity.")
+  magazineHandJson    String   // JSON array of 5 dealt problem slugs + roles
+  sprintAgendaJson    String   // JSON array of daily sprint tasks
+  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now())
+}
+
+model Problem {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  volumeNumber    Int      // 1..5
+  volumeName      String
+  topic           String
+  sourceTag       String   // e.g. "IRONWORKS", "CF-STYLE", "ATCODER-STYLE", "SYSTEMS"
+  rating          Int      // 800-3500 objective Power Level
+  accentColor     String   // crimson | cyan | gold | violet | emerald
+  brief           String
+  constraints     String
+  cruxPanelsJson  String   // JSON array of { id, title, promptHint, keywords[], colorHex, sfx }
+  starterCodeJson String   // JSON record { typescript, python, cpp, rust }
+  testCasesJson   String   // JSON array of { input, expected, label }
+  attempts        ShellBreakAttempt[]
+}
+
+model ShellBreakAttempt {
+  id                String   @id @default(cuid())
+  problemSlug       String
+  problem           Problem  @relation(fields: [problemSlug], references: [slug], onDelete: Cascade)
+  unlockedPanelIds  String   @default("[]") // JSON string[]
+  reasoningScore    Int      @default(0)
+  sealBroken        Boolean  @default(false)
+  solved            Boolean  @default(false)
+  messagesJson      String   @default("[]") // JSON array of chat turns
+  submittedCode     String   @default("")
+  language          String   @default("typescript")
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@unique([problemSlug])
+}
+
+model BlueprintSession {
+  id             String   @id @default("default-blueprint")
+  scenarioTitle  String   @default("Distributed Real-Time Manga Streaming & Low-Latency Feed")
+  nodesJson      String   // React Flow nodes JSON
+  edgesJson      String   // React Flow edges JSON
+  messagesJson   String   @default("[]")
+  rubricJson     String   @default("{}")
+  updatedAt      DateTime @updatedAt
+}
