@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Crosshair } from "lucide-react";
 import { BattleCard, type BattleCardData } from "@/components/BattleCard";
+import { playSfx } from "@/lib/sound";
 
 export default function ShellBreakIndexPage() {
   const [problems, setProblems] = useState<BattleCardData[]>([]);
@@ -19,18 +20,23 @@ export default function ShellBreakIndexPage() {
       ? problems
       : problems.filter((p) => p.volumeName.includes(`VOL. 0${volFilter}`));
 
+  const handleFilter = (v: number | "all") => {
+    playSfx("click");
+    setVolFilter(v);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="manga-panel p-5 bg-[#00C2FF] text-[#121218] speed-lines flex flex-wrap items-center justify-between gap-4">
+      <div className="manga-panel p-5 bg-[#00C2FF] text-[#121218] speed-lines flex flex-wrap items-center justify-between gap-4 border-[3px] border-[var(--border-ink)]">
         <div>
-          <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase">
+          <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase border border-white/20">
             PROOF-BEFORE-CODE · INK-TO-COLOR BREAKTHROUGH ENGINE
           </span>
           <h1 className="font-manga text-4xl sm:text-5xl tracking-wider mt-1 flex items-center gap-2">
             <Crosshair className="w-9 h-9" />
             SHELL BREAK ARENA
           </h1>
-          <p className="text-xs sm:text-sm font-bold max-w-2xl mt-1">
+          <p className="text-xs sm:text-sm font-bold max-w-2xl mt-1 text-[#121218]/90">
             Pick a Battle Card below. Every problem locks the code editor behind 2–3 black-and-white
             manga panels—prove each invariant to Sensei Reiko to flood the page with color and break
             the seal.
@@ -41,9 +47,9 @@ export default function ShellBreakIndexPage() {
           {(["all", 1, 2, 3, 4, 5] as const).map((v) => (
             <button
               key={String(v)}
-              onClick={() => setVolFilter(v)}
+              onClick={() => handleFilter(v)}
               className={`manga-btn px-3 py-1.5 text-xs ${
-                volFilter === v ? "bg-[#121218] text-[#FFC82C]" : "bg-[#FFFDF7] text-[#121218]"
+                volFilter === v ? "bg-[#121218] text-[#FFC82C]" : "bg-[var(--card-bg)] text-[var(--ink)]"
               }`}
             >
               {v === "all" ? "ALL VOLUMES" : `VOL. 0${v}`}

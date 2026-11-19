@@ -54,11 +54,11 @@ export function CombatRadar({ ratings }: CombatRadarProps) {
             <polygon
               key={r}
               points={pts}
-              fill={r === 1 ? "#FAF4E6" : "none"}
-              stroke="#121218"
+              fill={r === 1 ? "var(--radar-bg, #FAF4E6)" : "none"}
+              stroke="var(--radar-grid, #121218)"
               strokeWidth={r === 1 ? 2.5 : 1.2}
               strokeDasharray={r === 1 ? undefined : "4 3"}
-              opacity={r === 1 ? 1 : 0.45}
+              opacity={r === 1 ? 0.95 : 0.45}
             />
           );
         })}
@@ -73,7 +73,7 @@ export function CombatRadar({ ratings }: CombatRadarProps) {
               y1={cy}
               x2={outer.x}
               y2={outer.y}
-              stroke="#121218"
+              stroke="var(--radar-grid, #121218)"
               strokeWidth={1.3}
               opacity={0.4}
             />
@@ -83,7 +83,7 @@ export function CombatRadar({ ratings }: CombatRadarProps) {
         {/* Filled Anime Power Polygon */}
         <polygon
           points={statPoints}
-          fill="rgba(0, 194, 255, 0.36)"
+          fill="rgba(0, 194, 255, 0.4)"
           stroke="#FF3358"
           strokeWidth={3.2}
           strokeLinejoin="round"
@@ -101,16 +101,16 @@ export function CombatRadar({ ratings }: CombatRadarProps) {
               <circle
                 cx={p.x}
                 cy={p.y}
-                r={5}
+                r={5.5}
                 fill="#FFC82C"
-                stroke="#121218"
+                stroke="var(--radar-grid, #121218)"
                 strokeWidth={2.2}
               />
               <text
                 x={lbl.x}
                 y={lbl.y - 4}
                 textAnchor="middle"
-                className="fill-[#121218] text-[10px] font-black uppercase"
+                className="fill-[var(--ink,#121218)] text-[10px] font-black uppercase tracking-wider"
               >
                 {topic}
               </text>

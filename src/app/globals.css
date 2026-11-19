@@ -6,10 +6,26 @@
   --font-bangers: "Bangers", "Impact", "Arial Black", sans-serif;
   --font-space-grotesk: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
   --font-jetbrains-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+  /* Theme 1: Shonen Full-Color Manga Paper */
   --paper-bg: #FAF4E6;
   --panel-bg: #FFFDF7;
+  --subpanel-bg: #FAF4E6;
+  --card-bg: #FFFDF7;
+  --input-bg: #FAF4E6;
+  --header-bg: rgba(250, 244, 230, 0.95);
+
   --ink: #121218;
+  --ink-secondary: #2D2D3A;
   --ink-muted: #4A4A5A;
+
+  --border-ink: #121218;
+  --border-muted: rgba(18, 18, 24, 0.2);
+  --shadow-ink: #121218;
+
+  --radar-grid: #121218;
+  --radar-bg: #FAF4E6;
+
   --crimson: #FF3358;
   --ki-cyan: #00C2FF;
   --gold: #FFC82C;
@@ -18,10 +34,18 @@
   --sakura: #FF6FAE;
 }
 
-/* Color Mode 2: Classic B&W Ink Manga (Only unlocked / active breakthroughs pop with color!) */
+/* Theme 2: Classic B&W Ink Manga (Mastered breakthroughs glow in color!) */
 html[data-manga-mode="ink"] {
   --paper-bg: #F4F1EA;
   --panel-bg: #FFFFFF;
+  --subpanel-bg: #EAE6DC;
+  --card-bg: #FFFFFF;
+  --input-bg: #F0ECE2;
+  --header-bg: rgba(244, 241, 234, 0.95);
+  --border-ink: #121218;
+  --shadow-ink: #121218;
+  --radar-grid: #121218;
+  --radar-bg: #F4F1EA;
 }
 html[data-manga-mode="ink"] .manga-color-layer {
   filter: grayscale(100%) contrast(1.15);
@@ -31,12 +55,26 @@ html[data-manga-mode="ink"] .manga-unlocked-pop {
   filter: none !important;
 }
 
-/* Color Mode 3: Midnight Shonen (High-contrast neon ink dark manga spread) */
-html[data-manga-mode="midnight"] {
-  --paper-bg: #12121C;
-  --panel-bg: #1B1B2A;
-  --ink: #F8F4E8;
-  --ink-muted: #B8B8CE;
+/* Theme 3: Midnight Shonen Dark Mode (High-contrast Cyberpunk Dark Manga) */
+html[data-manga-mode="midnight"],
+html.dark {
+  --paper-bg: #0C0C14;
+  --panel-bg: #141424;
+  --subpanel-bg: #1B1B32;
+  --card-bg: #161628;
+  --input-bg: #1A1A30;
+  --header-bg: rgba(12, 12, 20, 0.95);
+
+  --ink: #F7F5EE;
+  --ink-secondary: #D4D4E8;
+  --ink-muted: #9595B4;
+
+  --border-ink: #00C2FF;
+  --border-muted: rgba(0, 194, 255, 0.28);
+  --shadow-ink: #FF3358;
+
+  --radar-grid: #00C2FF;
+  --radar-bg: #141424;
 }
 
 body {
@@ -48,43 +86,35 @@ body {
   background-size: 16px 16px, 100% 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-html[data-manga-mode="midnight"] body {
+html[data-manga-mode="midnight"] body,
+html.dark body {
   background-image:
-    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, transparent 49.4%, rgba(0, 194, 255, 0.08) 50%, transparent 50.6%);
+    radial-gradient(rgba(0, 194, 255, 0.12) 1.2px, transparent 1.2px),
+    linear-gradient(90deg, transparent 49.4%, rgba(255, 51, 88, 0.1) 50%, transparent 50.6%);
 }
 
-/* Authentic Manga Panel Framing */
+/* Manga Panel Framing */
 .manga-panel {
   background-color: var(--panel-bg);
-  border: 3px solid #121218;
-  box-shadow: 5px 5px 0px #121218;
+  border: 3px solid var(--border-ink);
+  box-shadow: 5px 5px 0px var(--shadow-ink);
   position: relative;
-}
-
-html[data-manga-mode="midnight"] .manga-panel {
-  border-color: #00C2FF;
-  box-shadow: 5px 5px 0px #FF3358;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .manga-panel-sm {
   background-color: var(--panel-bg);
-  border: 2.5px solid #121218;
-  box-shadow: 3px 3px 0px #121218;
-}
-
-html[data-manga-mode="midnight"] .manga-panel-sm {
-  border-color: #F8F4E8;
-  box-shadow: 3px 3px 0px #00C2FF;
+  border: 2.5px solid var(--border-ink);
+  box-shadow: 3px 3px 0px var(--shadow-ink);
 }
 
 /* Manga Button with Crisp Ink Press */
 .manga-btn {
-  border: 3px solid #121218;
-  box-shadow: 4px 4px 0px #121218;
+  border: 3px solid var(--border-ink);
+  box-shadow: 4px 4px 0px var(--shadow-ink);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -92,17 +122,23 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
 }
 .manga-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #121218;
+  box-shadow: 6px 6px 0px var(--shadow-ink);
 }
 .manga-btn:active {
   transform: translate(3px, 3px);
-  box-shadow: 1px 1px 0px #121218;
+  box-shadow: 1px 1px 0px var(--shadow-ink);
 }
 
 /* Ben-Day Halftone Overlay */
 .halftone-dots {
   background-image: radial-gradient(rgba(18, 18, 24, 0.16) 1.3px, transparent 1.3px);
   background-size: 7px 7px;
+}
+
+html[data-manga-mode="midnight"] .halftone-dots,
+html.dark .halftone-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1.2px, transparent 1.2px);
+  background-size: 8px 8px;
 }
 
 .halftone-cyan {
@@ -119,7 +155,15 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
 .speed-lines {
   background-image: repeating-conic-gradient(
     from 0deg,
-    rgba(18, 18, 24, 0.05) 0deg 3deg,
+    rgba(18, 18, 24, 0.06) 0deg 3deg,
+    transparent 3deg 10deg
+  );
+}
+html[data-manga-mode="midnight"] .speed-lines,
+html.dark .speed-lines {
+  background-image: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.08) 0deg 3deg,
     transparent 3deg 10deg
   );
 }
@@ -135,6 +179,19 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
   );
   filter: grayscale(100%);
   transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-manga-mode="midnight"] .crux-panel-locked,
+html.dark .crux-panel-locked {
+  background: repeating-linear-gradient(
+    -45deg,
+    #1E1E34,
+    #1E1E34 8px,
+    #151526 8px,
+    #151526 16px
+  );
+  border-color: #2D2D4A !important;
+  color: var(--ink-muted) !important;
 }
 
 .crux-panel-unlocked {
@@ -165,7 +222,7 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
   top: 18px;
   border-top: 9px solid transparent;
   border-bottom: 9px solid transparent;
-  border-right: 13px solid #121218;
+  border-right: 13px solid var(--border-ink, #121218);
 }
 .speech-bubble-left::after {
   content: "";
@@ -174,7 +231,7 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
   top: 20px;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
-  border-right: 10px solid #FFFDF7;
+  border-right: 10px solid var(--card-bg, #FFFDF7);
 }
 
 /* Open Manga Book Center Spine Shadow */
@@ -189,16 +246,87 @@ html[data-manga-mode="midnight"] .manga-panel-sm {
   );
 }
 
+html[data-manga-mode="midnight"] .book-spread-spine,
+html.dark .book-spread-spine {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 194, 255, 0.06) 40%,
+    rgba(0, 194, 255, 0.18) 50%,
+    rgba(0, 194, 255, 0.06) 60%,
+    transparent 100%
+  );
+}
+
 /* Custom Manga Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #EFE8D8;
-  border-left: 2px solid #121218;
+  background: var(--subpanel-bg, #EFE8D8);
+  border-left: 2px solid var(--border-ink, #121218);
 }
 ::-webkit-scrollbar-thumb {
   background: #FF3358;
-  border: 2px solid #121218;
+  border: 2px solid var(--border-ink, #121218);
+}
+
+/* =========================================================
+   COMPREHENSIVE DARK MODE AUTOMATIC OVERRIDES
+   Ensures EVERY existing card, block, text, and border adapts!
+   ========================================================= */
+
+html[data-manga-mode="midnight"] .bg-\[\#FFFDF7\],
+html.dark .bg-\[\#FFFDF7\],
+html[data-manga-mode="midnight"] .bg-white,
+html.dark .bg-white {
+  background-color: var(--card-bg) !important;
+  color: var(--ink) !important;
+}
+
+html[data-manga-mode="midnight"] .bg-\[\#FAF4E6\],
+html.dark .bg-\[\#FAF4E6\] {
+  background-color: var(--subpanel-bg) !important;
+  color: var(--ink) !important;
+}
+
+html[data-manga-mode="midnight"] .text-\[\#121218\],
+html.dark .text-\[\#121218\] {
+  color: var(--ink) !important;
+}
+
+html[data-manga-mode="midnight"] .text-\[\#4A4A5A\],
+html[data-manga-mode="midnight"] .text-\[\#3D3D4E\],
+html[data-manga-mode="midnight"] .text-\[\#2D2D3A\],
+html[data-manga-mode="midnight"] .text-\[\#22222E\],
+html.dark .text-\[\#4A4A5A\],
+html.dark .text-\[\#3D3D4E\],
+html.dark .text-\[\#2D2D3A\],
+html.dark .text-\[\#22222E\] {
+  color: var(--ink-secondary) !important;
+}
+
+html[data-manga-mode="midnight"] .border-\[\#121218\],
+html.dark .border-\[\#121218\] {
+  border-color: #2D2D4A !important;
+}
+
+html[data-manga-mode="midnight"] input,
+html[data-manga-mode="midnight"] textarea,
+html[data-manga-mode="midnight"] select,
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--input-bg) !important;
+  color: var(--ink) !important;
+  border-color: #38385A !important;
+}
+
+html[data-manga-mode="midnight"] input:focus,
+html[data-manga-mode="midnight"] textarea:focus,
+html.dark input:focus,
+html.dark textarea:focus {
+  border-color: #00C2FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 194, 255, 0.3) !important;
 }

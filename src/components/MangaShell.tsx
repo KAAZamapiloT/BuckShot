@@ -13,14 +13,18 @@ import {
   Palette,
   Contrast,
   Moon,
+  Sun,
   Search,
   Trophy,
   X,
   Send,
   MessageCircle,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { SEED_PROBLEMS, MANGA_VOLUMES } from "@/lib/seed-data";
 import { SenseiAvatar, type SenseiExpression } from "@/components/SenseiAvatar";
+import { isSoundEnabled, toggleSound, playSfx } from "@/lib/sound";
 
 type MangaMode = "color" | "ink" | "midnight";
 
@@ -34,10 +38,18 @@ const NAV_TABS = [
   { href: "/dossier", label: "DOSSIER", icon: ScrollText, color: "#FF6FAE" },
 ];
 
+const QUICK_PROMPTS = [
+  "💡 Give me an invariant hint",
+  "🔍 What is the brute-force bottleneck?",
+  "⚖️ Compare time & space bounds",
+  "🛡️ Check for tricky edge cases",
+];
+
 export function MangaShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mode, setMode] = useState<MangaMode>("color");
+  const [soundOn, setSoundOn] = useState(true);
 
   // Ctrl+K Quick Manga Search
   const [searchOpen, setSearchOpen] = useState(false);
@@ -57,10 +69,17 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
   ]);
 
   useEffect(() => {
+    setSoundOn(isSoundEnabled());
     const saved = localStorage.getItem("buckshot-manga-mode") as MangaMode | null;
     if (saved === "color" || saved === "ink" || saved === "midnight") {
       setMode(saved);
-      document.documentElement.setAttribute("data-manga-mode", saved);
+      applyMode(saved);
+    } else {
+      // Auto-detect OS dark mode
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        setMode("midnight");
+        applyMode("midnight");
+      }
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -75,20 +94,41 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const switchMode = (next: MangaMode) => {
-    setMode(next);
+  const applyMode = (next: MangaMode) => {
     document.documentElement.setAttribute("data-manga-mode", next);
+    if (next === "midnight") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  const switchMode = (next: MangaMode) => {
+    playSfx("click");
+    setMode(next);
+    applyMode(next);
     localStorage.setItem("buckshot-manga-mode", next);
   };
 
-  const askSensei = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = senseiInput.trim();
+  const toggleDarkMode = () => {
+    const next: MangaMode = mode === "midnight" ? "color" : "midnight";
+    switchMode(next);
+  };
+
+  const handleSoundToggle = () => {
+    const next = toggleSound();
+    setSoundOn(next);
+    if (next) playSfx("click");
+  };
+
+  const askSensei = async (messageText?: string) => {
+    const text = (messageText ?? senseiInput).trim();
     if (!text || senseiBusy) return;
-    setSenseiInput("");
+    if (!messageText) setSenseiInput("");
     setSenseiBusy(true);
     setSenseiExpr("thinking");
     setSenseiMsgs((prev) => [...prev, { role: "user", text }]);
+    playSfx("click");
 
     try {
       const res = await fetch("/api/coach/ask", {
@@ -102,6 +142,7 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
         ...prev,
         { role: "sensei", text: json.reply || "Keep pushing your proof!", sfx: json.sfx },
       ]);
+      playSfx("unlock");
     } finally {
       setSenseiBusy(false);
     }
@@ -129,23 +170,23 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[var(--paper-bg)] text-[var(--ink)] transition-colors duration-200">
       {/* Top Manga Book Masthead */}
-      <header className="sticky top-0 z-40 border-b-4 border-[#121218] bg-[#FAF4E6]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b-4 border-[var(--border-ink)] bg-[var(--header-bg)] backdrop-blur-md transition-colors">
         <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
           {/* Logo Stamp */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative bg-[#FF3358] text-white border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] px-3 py-1 -rotate-2 group-hover:rotate-0 transition-transform">
+          <Link href="/" onClick={() => playSfx("click")} className="flex items-center gap-2.5 group">
+            <div className="relative bg-[#FF3358] text-white border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] px-3 py-1 -rotate-2 group-hover:rotate-0 transition-transform">
               <span className="font-manga text-2xl sm:text-3xl tracking-wider leading-none block">
                 BUCKSHOT
               </span>
             </div>
             <div className="hidden 2xl:flex flex-col leading-tight">
-              <span className="text-[11px] font-black tracking-widest uppercase text-[#121218]">
+              <span className="text-[11px] font-black tracking-widest uppercase text-[var(--ink)]">
                 SHONEN AI INTERVIEW BOOK
               </span>
               <span className="text-[10px] font-bold uppercase text-[#FF3358]">
-                VOL. 01–05 · FULL COLOR EDITION
+                VOL. 01–05 · FULL COLOR &amp; DARK MODE
               </span>
             </div>
           </Link>
@@ -160,14 +201,15 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  onClick={() => playSfx("click")}
                   style={{
-                    backgroundColor: active ? tab.color : "#FFFDF7",
-                    color: "#121218",
+                    backgroundColor: active ? tab.color : "var(--panel-bg)",
+                    color: active ? "#121218" : "var(--ink)",
                   }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-black tracking-wide uppercase border-2 border-[#121218] transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-black tracking-wide uppercase border-2 border-[var(--border-ink)] transition-all ${
                     active
-                      ? "shadow-[3px_3px_0px_#121218] -translate-y-0.5"
-                      : "hover:bg-[#FFC82C]/40 hover:-translate-y-0.5 shadow-[2px_2px_0px_#121218]"
+                      ? "shadow-[3px_3px_0px_var(--shadow-ink)] -translate-y-0.5"
+                      : "hover:-translate-y-0.5 shadow-[2px_2px_0px_var(--shadow-ink)] hover:opacity-90"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 stroke-[2.6]" />
@@ -177,24 +219,62 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Right Utilities: Cmd+K Search + Manga Coloring Mode Switcher */}
+          {/* Right Utilities: Quick Dark Mode Toggle + Manga Theme Switcher + SFX Toggle + Search */}
           <div className="flex items-center gap-2">
+            {/* Direct Light/Dark Quick Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className={`p-1.5 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-xs font-black flex items-center gap-1 transition-all ${
+                mode === "midnight"
+                  ? "bg-[#7C4DFF] text-white"
+                  : "bg-[#FFC82C] text-[#121218]"
+              }`}
+              title={mode === "midnight" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {mode === "midnight" ? (
+                <>
+                  <Moon className="w-4 h-4 fill-current" />
+                  <span className="hidden sm:inline text-[10px] font-black uppercase">DARK</span>
+                </>
+              ) : (
+                <>
+                  <Sun className="w-4 h-4 fill-current" />
+                  <span className="hidden sm:inline text-[10px] font-black uppercase">LIGHT</span>
+                </>
+              )}
+            </button>
+
+            {/* SFX Mute/Unmute */}
+            <button
+              onClick={handleSoundToggle}
+              className="p-1.5 border-2 border-[var(--border-ink)] bg-[var(--panel-bg)] shadow-[2px_2px_0px_var(--shadow-ink)] hover:bg-[#00C2FF]/20 transition-colors"
+              title={soundOn ? "Mute Comic Audio SFX" : "Unmute Comic Audio SFX"}
+            >
+              {soundOn ? (
+                <Volume2 className="w-4 h-4 text-[#00C2FF]" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-[var(--ink-muted)]" />
+              )}
+            </button>
+
+            {/* Cmd+K Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#FFFDF7] text-[#121218] border-2 border-[#121218] shadow-[2px_2px_0px_#121218] text-[11px] font-black hover:bg-[#00C2FF]/25"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--panel-bg)] text-[var(--ink)] border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-[11px] font-black hover:bg-[#00C2FF]/25"
               title="Quick Manga Index (Ctrl+K)"
             >
               <Search className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">INDEX</span>
-              <kbd className="bg-[#121218] text-[#FFC82C] px-1 text-[9px] font-mono">⌘K</kbd>
+              <kbd className="bg-[var(--border-ink)] text-[var(--paper-bg)] px-1 text-[9px] font-mono">⌘K</kbd>
             </button>
 
-            <div className="flex items-center border-2 border-[#121218] bg-[#FFFDF7] shadow-[3px_3px_0px_#121218] overflow-hidden">
+            {/* 3-Way Manga Theme Switcher */}
+            <div className="flex items-center border-2 border-[var(--border-ink)] bg-[var(--panel-bg)] shadow-[3px_3px_0px_var(--shadow-ink)] overflow-hidden">
               <button
                 onClick={() => switchMode("color")}
-                title="Full-Color Manga Spread"
-                className={`px-2 py-1.5 text-[11px] font-black flex items-center gap-1 transition-colors ${
-                  mode === "color" ? "bg-[#FFC82C] text-[#121218]" : "text-[#121218] hover:bg-black/5"
+                title="Full-Color Shonen Manga"
+                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 transition-colors ${
+                  mode === "color" ? "bg-[#FFC82C] text-[#121218]" : "text-[var(--ink)] hover:opacity-80"
                 }`}
               >
                 <Palette className="w-3.5 h-3.5" />
@@ -202,9 +282,9 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
               </button>
               <button
                 onClick={() => switchMode("ink")}
-                title="Classic B&W Ink (Mastered panels glow in color!)"
-                className={`px-2 py-1.5 text-[11px] font-black flex items-center gap-1 border-x-2 border-[#121218] transition-colors ${
-                  mode === "ink" ? "bg-[#121218] text-white" : "text-[#121218] hover:bg-black/5"
+                title="Classic B&W Halftone Ink"
+                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 border-x-2 border-[var(--border-ink)] transition-colors ${
+                  mode === "ink" ? "bg-[#121218] text-white" : "text-[var(--ink)] hover:opacity-80"
                 }`}
               >
                 <Contrast className="w-3.5 h-3.5" />
@@ -212,9 +292,9 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
               </button>
               <button
                 onClick={() => switchMode("midnight")}
-                title="Midnight Shonen Neon Ink"
-                className={`px-2 py-1.5 text-[11px] font-black flex items-center gap-1 transition-colors ${
-                  mode === "midnight" ? "bg-[#7C4DFF] text-white" : "text-[#121218] hover:bg-black/5"
+                title="Midnight Shonen Dark Mode"
+                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 transition-colors ${
+                  mode === "midnight" ? "bg-[#7C4DFF] text-white" : "text-[var(--ink)] hover:opacity-80"
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -229,17 +309,17 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 py-6">{children}</main>
 
       {/* Printed Manga Tankobon Footer */}
-      <footer className="border-t-4 border-[#121218] bg-[#FFFDF7] text-[#121218] mt-10">
+      <footer className="border-t-4 border-[var(--border-ink)] bg-[var(--panel-bg)] text-[var(--ink)] mt-10 transition-colors">
         <div className="max-w-[1440px] mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
           <div className="flex items-center gap-2">
-            <span className="font-manga text-lg bg-[#121218] text-[#FFC82C] px-2 py-0.5 tracking-wider">
+            <span className="font-manga text-lg bg-[#FF3358] text-white px-2 py-0.5 tracking-wider">
               BUCKSHOT
             </span>
             <span>LOAD THE LOGIC. FIRE THE PROOF.</span>
           </div>
-          <div className="flex items-center gap-4 uppercase text-[11px] text-[#4A4A5A]">
-            <span>NEXT.JS 15 · PRISMA SQLITE · MULTI-PROVIDER AI SDK</span>
-            <span className="bg-[#00C2FF]/20 border border-[#121218] px-2 py-0.5 text-[#121218]">
+          <div className="flex items-center gap-4 uppercase text-[11px] text-[var(--ink-muted)]">
+            <span>FULL COLOR &amp; MIDNIGHT DARK MODE READY</span>
+            <span className="bg-[#00C2FF]/20 border border-[var(--border-ink)] px-2 py-0.5 text-[var(--ink)]">
               10 ARENAS · 5 VOLUMES
             </span>
           </div>
@@ -249,29 +329,29 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
       {/* CTRL+K QUICK MANGA INDEX MODAL */}
       {searchOpen && (
         <div
-          className="fixed inset-0 z-50 bg-[#121218]/75 backdrop-blur-xs flex items-start justify-center pt-20 p-4"
+          className="fixed inset-0 z-50 bg-[#121218]/80 backdrop-blur-sm flex items-start justify-center pt-20 p-4"
           onClick={() => setSearchOpen(false)}
         >
           <div
-            className="manga-panel w-full max-w-xl bg-[#FFFDF7] text-[#121218] overflow-hidden"
+            className="manga-panel w-full max-w-xl bg-[var(--panel-bg)] text-[var(--ink)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-[#FFC82C] px-4 py-2.5 border-b-[3px] border-[#121218] flex items-center justify-between">
+            <div className="bg-[#FFC82C] text-[#121218] px-4 py-2.5 border-b-[3px] border-[var(--border-ink)] flex items-center justify-between">
               <span className="font-manga text-2xl tracking-wider">MANGA BOOK QUICK INDEX</span>
               <button onClick={() => setSearchOpen(false)}>
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-3 border-b-2 border-[#121218]">
+            <div className="p-3 border-b-2 border-[var(--border-ink)]">
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Jump to problem, Volume, Ring Buffer, KV Cache, Raft, Guessr..."
-                className="w-full bg-[#FAF4E6] border-2 border-[#121218] px-3 py-2 text-sm font-bold focus:outline-none"
+                className="w-full bg-[var(--input-bg)] text-[var(--ink)] border-2 border-[var(--border-ink)] px-3 py-2 text-sm font-bold focus:outline-none"
               />
             </div>
-            <div className="max-h-80 overflow-y-auto divide-y-2 divide-[#121218]/15">
+            <div className="max-h-80 overflow-y-auto divide-y-2 divide-[var(--border-ink)]/15">
               {searchItems.slice(0, 12).map((item) => (
                 <button
                   key={`${item.tag}-${item.href}`}
@@ -280,13 +360,13 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
                     setQuery("");
                     router.push(item.href);
                   }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-[#00C2FF]/20 flex items-center justify-between gap-2"
+                  className="w-full text-left px-4 py-2.5 hover:bg-[#00C2FF]/20 flex items-center justify-between gap-2 transition-colors"
                 >
                   <div>
                     <div className="text-sm font-black">{item.title}</div>
-                    <div className="text-[11px] font-bold text-[#4A4A5A]">{item.sub}</div>
+                    <div className="text-[11px] font-bold text-[var(--ink-muted)]">{item.sub}</div>
                   </div>
-                  <span className="bg-[#121218] text-[#FFC82C] text-[10px] font-black px-2 py-0.5 shrink-0">
+                  <span className="bg-[#FF3358] text-white text-[10px] font-black px-2 py-0.5 shrink-0">
                     {item.tag}
                   </span>
                 </button>
@@ -300,13 +380,16 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-5 right-5 z-40">
         {!senseiOpen ? (
           <button
-            onClick={() => setSenseiOpen(true)}
-            className="group flex items-center gap-2.5 bg-[#FF3358] text-white border-[3px] border-[#121218] shadow-[5px_5px_0px_#121218] px-3.5 py-2 hover:-translate-y-1 transition-transform"
+            onClick={() => {
+              playSfx("click");
+              setSenseiOpen(true);
+            }}
+            className="group flex items-center gap-2.5 bg-[#FF3358] text-white border-[3px] border-[var(--border-ink)] shadow-[5px_5px_0px_var(--shadow-ink)] px-3.5 py-2 hover:-translate-y-1 transition-transform"
           >
             <img
               src="/art/sensei-idle.jpg"
               alt="Summon Sensei Reiko"
-              className="w-9 h-9 rounded-full object-cover border-2 border-[#121218] manga-unlocked-pop"
+              className="w-9 h-9 rounded-full object-cover border-2 border-[var(--border-ink)] manga-unlocked-pop"
             />
             <div className="text-left leading-tight">
               <div className="font-manga text-lg tracking-wider">ASK SENSEI REIKO</div>
@@ -316,8 +399,8 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
             </div>
           </button>
         ) : (
-          <div className="manga-panel w-[340px] sm:w-[390px] bg-[#FFFDF7] text-[#121218] overflow-hidden flex flex-col max-h-[520px]">
-            <div className="bg-[#FFC82C] px-3.5 py-2.5 border-b-[3px] border-[#121218] flex items-center justify-between speed-lines">
+          <div className="manga-panel w-[340px] sm:w-[410px] bg-[var(--panel-bg)] text-[var(--ink)] overflow-hidden flex flex-col max-h-[560px]">
+            <div className="bg-[#FFC82C] text-[#121218] px-3.5 py-2.5 border-b-[3px] border-[var(--border-ink)] flex items-center justify-between speed-lines">
               <div className="flex items-center gap-2.5">
                 <SenseiAvatar expression={senseiExpr} size="sm" />
                 <div>
@@ -327,20 +410,33 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
               </div>
               <button
                 onClick={() => setSenseiOpen(false)}
-                className="bg-[#121218] text-white p-1"
+                className="bg-[var(--border-ink)] text-white p-1 hover:opacity-80"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[#FAF4E6] halftone-dots min-h-[220px]">
+            {/* Quick Ask Suggestion Chips */}
+            <div className="p-2 bg-[var(--subpanel-bg)] border-b border-[var(--border-ink)]/20 flex flex-wrap gap-1">
+              {QUICK_PROMPTS.map((qp) => (
+                <button
+                  key={qp}
+                  onClick={() => askSensei(qp.replace(/^[^a-zA-Z]+/, ""))}
+                  className="text-[10px] font-black bg-[var(--card-bg)] text-[var(--ink)] border border-[var(--border-ink)] px-2 py-0.5 hover:bg-[#00C2FF]/20 transition-colors"
+                >
+                  {qp}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[var(--subpanel-bg)] halftone-dots min-h-[220px]">
               {senseiMsgs.map((m, i) => (
                 <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[88%] border-2 border-[#121218] p-2.5 text-xs font-bold leading-snug ${
+                    className={`max-w-[88%] border-2 border-[var(--border-ink)] p-2.5 text-xs font-bold leading-snug ${
                       m.role === "user"
-                        ? "bg-[#00C2FF] shadow-[2px_2px_0px_#121218]"
-                        : "bg-white shadow-[3px_3px_0px_#FF3358]"
+                        ? "bg-[#00C2FF] text-[#121218] shadow-[2px_2px_0px_var(--shadow-ink)]"
+                        : "bg-[var(--card-bg)] text-[var(--ink)] shadow-[3px_3px_0px_#FF3358]"
                     }`}
                   >
                     {m.sfx && (
@@ -348,26 +444,29 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
                         {m.sfx}
                       </span>
                     )}
-                    <div>{m.text}</div>
+                    <div className="whitespace-pre-line">{m.text}</div>
                   </div>
                 </div>
               ))}
             </div>
 
             <form
-              onSubmit={askSensei}
-              className="p-2.5 bg-[#FFFDF7] border-t-[3px] border-[#121218] flex gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                askSensei();
+              }}
+              className="p-2.5 bg-[var(--card-bg)] border-t-[3px] border-[var(--border-ink)] flex gap-1.5"
             >
               <input
                 value={senseiInput}
                 onChange={(e) => setSenseiInput(e.target.value)}
                 placeholder="Ask about DP, Kafka, Rust, KV Cache..."
-                className="flex-1 border-2 border-[#121218] bg-[#FAF4E6] px-2.5 py-1.5 text-xs font-bold focus:outline-none"
+                className="flex-1 border-2 border-[var(--border-ink)] bg-[var(--input-bg)] text-[var(--ink)] px-2.5 py-1.5 text-xs font-bold focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={senseiBusy || !senseiInput.trim()}
-                className="manga-btn bg-[#FF3358] text-white px-3 py-1.5 text-xs"
+                className="manga-btn bg-[#FF3358] text-white px-3 py-1.5 text-xs disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>

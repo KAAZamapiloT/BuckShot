@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SenseiAvatar } from "@/components/SenseiAvatar";
 import { MANGA_VOLUMES } from "@/lib/seed-data";
+import { playSfx } from "@/lib/sound";
 
 interface BootstrapData {
   profile: {
@@ -52,33 +53,33 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       {/* DOUBLE-PAGE MANGA HERO SPREAD */}
-      <section className="manga-panel overflow-hidden relative">
+      <section className="manga-panel overflow-hidden relative border-[3px] border-[var(--border-ink)] bg-[var(--card-bg)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 relative">
           {/* Center Book Spine Shadow on Desktop */}
           <div className="hidden lg:block absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 book-spread-spine pointer-events-none z-20" />
 
           {/* LEFT PAGE: Title Splash + Philosophy + Action Buttons */}
-          <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between bg-[#FFFDF7] text-[#121218] halftone-dots relative">
+          <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between bg-[var(--card-bg)] text-[var(--ink)] halftone-dots relative">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-[#FF3358] text-white text-xs font-black px-2.5 py-1 border-2 border-[#121218] shadow-[2px_2px_0px_#121218] uppercase">
-                  ISSUE #01 · FULL COLOR EDITION
+                <span className="bg-[#FF3358] text-white text-xs font-black px-2.5 py-1 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] uppercase">
+                  ISSUE #01 · FULL COLOR &amp; DARK MODE
                 </span>
-                <span className="bg-[#FFC82C] text-[#121218] text-xs font-black px-2.5 py-1 border-2 border-[#121218] uppercase">
+                <span className="bg-[#FFC82C] text-[#121218] text-xs font-black px-2.5 py-1 border-2 border-[var(--border-ink)] uppercase">
                   {data?.aiStatus || "MULTI-PROVIDER AI COACH READY"}
                 </span>
               </div>
 
-              <h1 className="font-manga text-5xl sm:text-7xl leading-[0.95] tracking-wider text-[#121218]">
+              <h1 className="font-manga text-5xl sm:text-7xl leading-[0.95] tracking-wider text-[var(--ink)]">
                 LOAD THE LOGIC.
-                <span className="block text-[#FF3358] drop-shadow-[3px_3px_0px_#121218]">
+                <span className="block text-[#FF3358] drop-shadow-[3px_3px_0px_var(--shadow-ink)]">
                   FIRE THE PROOF.
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base font-bold text-[#2D2D3A] leading-relaxed max-w-xl">
+              <p className="text-sm sm:text-base font-bold text-[var(--ink-secondary)] leading-relaxed max-w-xl">
                 Stop memorizing 400 puzzle templates.{" "}
-                <strong className="bg-[#FFC82C]/60 px-1">BUCKSHOT</strong> is an anime-styled AI
+                <strong className="bg-[#FFC82C] text-[#121218] px-1">BUCKSHOT</strong> is an anime-styled AI
                 engineering dojo built on cognitive scaffolding: every unsolved breakthrough starts
                 in stark black-and-white ink and{" "}
                 <span className="text-[#FF3358] font-black">floods with full anime color</span> the
@@ -88,11 +89,11 @@ export default function HomePage() {
               {/* Sensei Welcome Speech Bubble */}
               <div className="flex items-start gap-4 pt-2">
                 <SenseiAvatar expression="idle" sfx="YO!" size="md" />
-                <div className="relative speech-bubble-left bg-[#FFFDF7] border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] p-3.5 text-xs sm:text-sm font-bold leading-snug flex-1">
+                <div className="relative speech-bubble-left bg-[var(--card-bg)] border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] p-3.5 text-xs sm:text-sm font-bold leading-snug flex-1 text-[var(--ink)]">
                   &ldquo;Welcome back,{" "}
-                  <span className="text-[#FF3358]">{data?.profile.codename ?? "SHADOW_DEV"}</span>.
+                  <span className="text-[#FF3358] font-black">{data?.profile.codename ?? "SHADOW_DEV"}</span>.
                   Your Power Rating sits at{" "}
-                  <span className="bg-[#00C2FF]/30 px-1">
+                  <span className="bg-[#00C2FF]/30 px-1 border border-[#00C2FF]/40">
                     PL {data?.profile.overallRating ?? 1480}
                   </span>
                   . Step into <strong>Shell Break</strong> and shatter all 3 panels before touching
@@ -104,6 +105,7 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3 pt-6">
               <Link
                 href="/shell-break/monotonic-stack-skyline"
+                onClick={() => playSfx("click")}
                 className="manga-btn bg-[#FF3358] text-white px-5 py-3 text-sm flex items-center gap-2"
               >
                 <Crosshair className="w-4 h-4" />
@@ -112,6 +114,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/chamber"
+                onClick={() => playSfx("click")}
                 className="manga-btn bg-[#FFC82C] text-[#121218] px-5 py-3 text-sm flex items-center gap-2"
               >
                 <Flame className="w-4 h-4" />
@@ -119,6 +122,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/blueprint"
+                onClick={() => playSfx("click")}
                 className="manga-btn bg-[#00C2FF] text-[#121218] px-4 py-3 text-sm flex items-center gap-2"
               >
                 <Layers className="w-4 h-4" />
@@ -126,6 +130,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/guessr"
+                onClick={() => playSfx("click")}
                 className="manga-btn bg-[#00C875] text-[#121218] px-4 py-3 text-sm flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
@@ -135,13 +140,13 @@ export default function HomePage() {
           </div>
 
           {/* RIGHT PAGE: Full-Color Custom Shonen Spread Artwork + Live Stats Overlay */}
-          <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-[470px] border-t-4 lg:border-t-0 lg:border-l-4 border-[#121218] bg-[#121218] overflow-hidden manga-color-layer">
+          <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-[470px] border-t-4 lg:border-t-0 lg:border-l-4 border-[var(--border-ink)] bg-[#121218] overflow-hidden manga-color-layer">
             <img
               src="/art/hero-spread.jpg"
               alt="BUCKSHOT Shonen Engineering Command Dojo"
               className="w-full h-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#121218]/90 via-transparent to-[#121218]/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C14]/90 via-transparent to-transparent" />
 
             {/* Top-Right Manga Chapter Stamp */}
             <div className="absolute top-4 right-4 bg-[#FFC82C] text-[#121218] border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] px-3 py-1.5 rotate-2">
@@ -155,21 +160,21 @@ export default function HomePage() {
 
             {/* Bottom Live Telemetry Strip */}
             <div className="absolute bottom-4 inset-x-4 grid grid-cols-3 gap-2.5">
-              <div className="bg-[#FFFDF7] text-[#121218] border-[3px] border-[#121218] shadow-[3px_3px_0px_#FF3358] p-2.5">
-                <div className="text-[10px] font-black text-[#4A4A5A] uppercase">PANELS COLORED</div>
+              <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_#FF3358] p-2.5">
+                <div className="text-[10px] font-black text-[var(--ink-muted)] uppercase">PANELS COLORED</div>
                 <div className="font-manga text-2xl text-[#FF3358]">
                   {coloredPanels} / {totalPanels}
                 </div>
               </div>
-              <div className="bg-[#FFFDF7] text-[#121218] border-[3px] border-[#121218] shadow-[3px_3px_0px_#00C2FF] p-2.5">
-                <div className="text-[10px] font-black text-[#4A4A5A] uppercase">STREAK FLAME</div>
+              <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_#00C2FF] p-2.5">
+                <div className="text-[10px] font-black text-[var(--ink-muted)] uppercase">STREAK FLAME</div>
                 <div className="font-manga text-2xl text-[#00C2FF]">
                   {data?.profile.streakDays ?? 7} DAYS
                 </div>
               </div>
-              <div className="bg-[#FFFDF7] text-[#121218] border-[3px] border-[#121218] shadow-[3px_3px_0px_#FFC82C] p-2.5">
-                <div className="text-[10px] font-black text-[#4A4A5A] uppercase">TOTAL XP</div>
-                <div className="font-manga text-2xl text-[#121218]">
+              <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_#FFC82C] p-2.5">
+                <div className="text-[10px] font-black text-[var(--ink-muted)] uppercase">TOTAL XP</div>
+                <div className="font-manga text-2xl text-[var(--ink)]">
                   {data?.profile.xp ?? 2450}
                 </div>
               </div>
@@ -185,7 +190,7 @@ export default function HomePage() {
             <Zap className="w-7 h-7 text-[#FF3358] fill-[#FFC82C]" />
             CORE AI COACH MODULES
           </h2>
-          <span className="text-xs font-black uppercase bg-[#121218] text-[#FFC82C] px-2.5 py-1">
+          <span className="text-xs font-black uppercase bg-[#121218] text-[#FFC82C] border border-[var(--border-ink)] px-2.5 py-1">
             ACTIVE LEARNING · VYGOTSKY ZPD
           </span>
         </div>
@@ -230,23 +235,24 @@ export default function HomePage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="manga-panel p-0 overflow-hidden group flex flex-col justify-between hover:-translate-y-1.5 transition-transform"
+                onClick={() => playSfx("click")}
+                className="manga-panel p-0 overflow-hidden group flex flex-col justify-between hover:-translate-y-1.5 transition-transform border-[3px] border-[var(--border-ink)] bg-[var(--card-bg)]"
               >
                 <div
                   style={{ backgroundColor: item.color }}
-                  className="px-4 py-2.5 border-b-[3px] border-[#121218] flex items-center justify-between speed-lines"
+                  className="px-4 py-2.5 border-b-[3px] border-[var(--border-ink)] flex items-center justify-between speed-lines text-[#121218]"
                 >
                   <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-wider">
                     {item.badge}
                   </span>
                   <Icon className="w-5 h-5 text-[#121218] stroke-[2.6]" />
                 </div>
-                <div className="p-4 bg-[#FFFDF7] text-[#121218] flex-1 flex flex-col justify-between">
+                <div className="p-4 bg-[var(--card-bg)] text-[var(--ink)] flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="font-manga text-2xl tracking-wide mb-1.5 group-hover:text-[#FF3358] transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-xs font-medium text-[#4A4A5A] leading-relaxed">
+                    <p className="text-xs font-medium text-[var(--ink-secondary)] leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -261,8 +267,8 @@ export default function HomePage() {
       </section>
 
       {/* 5 FULL-COLOR MANGA VOLUMES BOOKSHELF */}
-      <section className="manga-panel p-6 bg-[#FFFDF7] text-[#121218] space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b-[3px] border-[#121218] pb-3">
+      <section className="manga-panel p-6 bg-[var(--card-bg)] text-[var(--ink)] space-y-5 border-[3px] border-[var(--border-ink)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b-[3px] border-[var(--border-ink)] pb-3">
           <div>
             <span className="text-[11px] font-black uppercase tracking-widest text-[#FF3358]">
               COMPLETE ENGINEERING SAGA
@@ -273,6 +279,7 @@ export default function HomePage() {
           </div>
           <Link
             href="/volumes"
+            onClick={() => playSfx("click")}
             className="manga-btn bg-[#7C4DFF] text-white px-4 py-2 text-xs flex items-center gap-1.5"
           >
             <Sparkles className="w-4 h-4" />
@@ -287,11 +294,12 @@ export default function HomePage() {
               <Link
                 key={vol.number}
                 href={`/volumes#vol-${vol.number}`}
-                className="border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] bg-[#FAF4E6] flex flex-col justify-between overflow-hidden hover:-translate-y-1 transition-transform manga-color-layer"
+                onClick={() => playSfx("click")}
+                className="border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] bg-[var(--subpanel-bg)] flex flex-col justify-between overflow-hidden hover:-translate-y-1 transition-transform manga-color-layer"
               >
                 <div
                   style={{ backgroundColor: vol.accent }}
-                  className="p-3 border-b-[3px] border-[#121218] speed-lines"
+                  className="p-3 border-b-[3px] border-[var(--border-ink)] speed-lines text-[#121218]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-manga text-xl text-[#121218]">{vol.code}</span>
@@ -303,14 +311,14 @@ export default function HomePage() {
                     {vol.name}
                   </div>
                 </div>
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-3">
-                  <p className="text-xs font-bold text-[#3D3D4E] leading-snug">{vol.subtitle}</p>
+                <div className="p-3 flex-1 flex flex-col justify-between space-y-3 text-[var(--ink)]">
+                  <p className="text-xs font-bold text-[var(--ink-secondary)] leading-snug">{vol.subtitle}</p>
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-black uppercase">
+                    <div className="flex justify-between text-[10px] font-black uppercase text-[var(--ink-muted)]">
                       <span>{vol.completed}/{vol.chapters} CH.</span>
                       <span>{pct}% COLORED</span>
                     </div>
-                    <div className="h-2 bg-white border-2 border-[#121218]">
+                    <div className="h-2 bg-[var(--card-bg)] border-2 border-[var(--border-ink)]">
                       <div
                         style={{ width: `${pct}%`, backgroundColor: vol.accent }}
                         className="h-full"
@@ -323,13 +331,13 @@ export default function HomePage() {
           })}
         </div>
 
-        <div className="bg-[#FAF4E6] border-2 border-dashed border-[#121218] p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
+        <div className="bg-[var(--subpanel-bg)] border-2 border-dashed border-[var(--border-ink)] p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--ink-secondary)]">
           <span className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#00C875]" />
-            Tip: Toggle <strong>B&amp;W INK</strong> in the top bar to experience classic manga pages where ONLY your unlocked breakthroughs pop in vivid anime color!
+            Tip: Click the <strong>🌙 DARK</strong> toggle in the top bar for Midnight Shonen Cyberpunk mode!
           </span>
-          <span className="font-mono text-[11px] bg-[#121218] text-[#00C2FF] px-2 py-0.5">
-            SQLite + Prisma Persistence Active
+          <span className="font-mono text-[11px] bg-[#121218] text-[#00C2FF] border border-[var(--border-ink)] px-2 py-0.5">
+            Full-Color · B&amp;W · Midnight Dark
           </span>
         </div>
       </section>

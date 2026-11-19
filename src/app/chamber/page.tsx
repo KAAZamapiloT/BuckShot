@@ -6,6 +6,8 @@ import { RefreshCw, CheckSquare, Square, Flame, Target, ArrowRight } from "lucid
 import { CombatRadar } from "@/components/CombatRadar";
 import { BattleCard, type BattleCardData } from "@/components/BattleCard";
 import { SenseiAvatar } from "@/components/SenseiAvatar";
+import { SprintTimer } from "@/components/SprintTimer";
+import { playSfx } from "@/lib/sound";
 
 interface SprintTask {
   id: string;
@@ -55,9 +57,11 @@ export default function ChamberPage() {
 
   const dealNewHand = async () => {
     setDealing(true);
+    playSfx("deal");
     try {
       await fetch("/api/magazine", { method: "POST" });
       await load();
+      playSfx("unlock");
     } finally {
       setDealing(false);
     }
@@ -65,6 +69,7 @@ export default function ChamberPage() {
 
   const toggleTask = async (taskId: string) => {
     if (!state) return;
+    playSfx("click");
     const updatedAgenda = state.profile.sprintAgenda.map((t) =>
       t.id === taskId ? { ...t, done: !t.done } : t
     );
@@ -72,6 +77,9 @@ export default function ChamberPage() {
       ...state,
       profile: { ...state.profile, sprintAgenda: updatedAgenda },
     });
+    if (!state.profile.sprintAgenda.find((t) => t.id === taskId)?.done) {
+      playSfx("unlock");
+    }
     await fetch("/api/dossier", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -106,7 +114,7 @@ export default function ChamberPage() {
       {/* Banner Header */}
       <div className="manga-panel p-5 bg-[#FF3358] text-white speed-lines flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="bg-[#121218] text-[#FFC82C] text-[10px] font-black px-2 py-0.5 uppercase tracking-widest">
+          <span className="bg-[#121218] text-[#FFC82C] text-[10px] font-black px-2 py-0.5 uppercase tracking-widest border border-white/20">
             PERSONAL AI PREP HQ · ADAPTIVE ELO ENGINE
           </span>
           <h1 className="font-manga text-4xl sm:text-5xl tracking-wider mt-1 drop-shadow-[3px_3px_0px_#121218]">
@@ -114,8 +122,8 @@ export default function ChamberPage() {
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-[#FFFDF7] text-[#121218] border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] px-4 py-2">
-            <div className="text-[10px] font-black uppercase text-[#4A4A5A]">ACTIVE SPRINT</div>
+          <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] px-4 py-2">
+            <div className="text-[10px] font-black uppercase text-[var(--ink-muted)]">ACTIVE SPRINT</div>
             <div className="font-black text-sm flex items-center gap-1.5">
               <Target className="w-4 h-4 text-[#FF3358]" />
               {state.profile.targetCompany} ({state.profile.sprintWeeksLeft}w left)
@@ -123,6 +131,7 @@ export default function ChamberPage() {
           </div>
           <Link
             href="/dossier"
+            onClick={() => playSfx("click")}
             className="manga-btn bg-[#FFC82C] text-[#121218] px-4 py-2.5 text-xs"
           >
             EDIT SENSEI DOSSIER
@@ -130,39 +139,44 @@ export default function ChamberPage() {
         </div>
       </div>
 
-      {/* 2-PAGE SPREAD: LEFT = RADAR + AGENDA | RIGHT = SENSEI DIRECTIVE */}
+      {/* 2-PAGE SPREAD: LEFT = RADAR + TIMER | RIGHT = AGENDA + SENSEI DIRECTIVE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Combat Stat Radar */}
-        <div className="lg:col-span-5 manga-panel p-5 bg-[#FFFDF7] text-[#121218] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b-[3px] border-[#121218] pb-2 mb-4">
-              <h2 className="font-manga text-2xl tracking-wide">7-AXIS COMBAT STAT RADAR</h2>
-              <span className="bg-[#121218] text-[#00C2FF] font-manga text-lg px-2.5 py-0.5">
-                PL {state.profile.overallRating}
-              </span>
+        {/* Combat Stat Radar & Mock Timer */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b-[3px] border-[var(--border-ink)] pb-2 mb-4">
+                <h2 className="font-manga text-2xl tracking-wide">7-AXIS COMBAT STAT RADAR</h2>
+                <span className="bg-[#121218] text-[#00C2FF] font-manga text-lg px-2.5 py-0.5 border border-[var(--border-ink)]">
+                  PL {state.profile.overallRating}
+                </span>
+              </div>
+              <CombatRadar ratings={state.profile.topicRatings} />
             </div>
-            <CombatRadar ratings={state.profile.topicRatings} />
+
+            <div className="mt-4 bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] p-3 flex items-center gap-3">
+              <SenseiAvatar expression="thinking" size="sm" />
+              <p className="text-xs font-bold leading-snug">
+                Your lowest axis drives Round 02 of your Magazine. Crush{" "}
+                <strong className="text-[#FF3358]">Concurrency</strong> &amp;{" "}
+                <strong className="text-[#7C4DFF]">DP</strong> panels to hit A-Rank (1650+ PL)!
+              </p>
+            </div>
           </div>
 
-          <div className="mt-4 bg-[#FAF4E6] border-2 border-[#121218] p-3 flex items-center gap-3">
-            <SenseiAvatar expression="thinking" size="sm" />
-            <p className="text-xs font-bold leading-snug">
-              Your lowest axis drives Round 02 of your Magazine. Crush{" "}
-              <strong className="text-[#FF3358]">Concurrency</strong> &amp;{" "}
-              <strong className="text-[#7C4DFF]">DP</strong> panels to hit A-Rank (1650+ PL)!
-            </p>
-          </div>
+          {/* Interactive Technical Mock Countdown Timer */}
+          <SprintTimer defaultMinutes={45} />
         </div>
 
         {/* Sprint Daily Agenda */}
-        <div className="lg:col-span-7 manga-panel p-5 bg-[#FFFDF7] text-[#121218] flex flex-col justify-between">
+        <div className="lg:col-span-7 manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b-[3px] border-[#121218] pb-2 mb-4">
+            <div className="flex items-center justify-between border-b-[3px] border-[var(--border-ink)] pb-2 mb-4">
               <h2 className="font-manga text-2xl tracking-wide flex items-center gap-2">
                 <Flame className="w-6 h-6 text-[#FF3358]" />
                 TODAY&apos;S TRAINING ARC AGENDA
               </h2>
-              <span className="text-xs font-black uppercase bg-[#FFC82C] border-2 border-[#121218] px-2 py-0.5">
+              <span className="text-xs font-black uppercase bg-[#FFC82C] text-[#121218] border-2 border-[var(--border-ink)] px-2 py-0.5">
                 {state.profile.sprintAgenda.filter((t) => t.done).length}/
                 {state.profile.sprintAgenda.length} CLEARED
               </span>
@@ -172,10 +186,10 @@ export default function ChamberPage() {
               {state.profile.sprintAgenda.map((task) => (
                 <div
                   key={task.id}
-                  className={`border-[3px] border-[#121218] p-3.5 flex items-center justify-between gap-3 transition-colors ${
+                  className={`border-[3px] border-[var(--border-ink)] p-3.5 flex items-center justify-between gap-3 transition-colors ${
                     task.done
                       ? "bg-[#00C875]/20 line-through opacity-80"
-                      : "bg-[#FAF4E6] shadow-[3px_3px_0px_#121218]"
+                      : "bg-[var(--subpanel-bg)] shadow-[3px_3px_0px_var(--shadow-ink)]"
                   }`}
                 >
                   <button
@@ -185,11 +199,11 @@ export default function ChamberPage() {
                     {task.done ? (
                       <CheckSquare className="w-5 h-5 text-[#00C875] shrink-0 mt-0.5" />
                     ) : (
-                      <Square className="w-5 h-5 text-[#121218] shrink-0 mt-0.5" />
+                      <Square className="w-5 h-5 text-[var(--ink)] shrink-0 mt-0.5" />
                     )}
                     <div>
-                      <div className="text-sm font-black">{task.title}</div>
-                      <div className="text-[11px] font-bold text-[#4A4A5A] uppercase">
+                      <div className="text-sm font-black text-[var(--ink)]">{task.title}</div>
+                      <div className="text-[11px] font-bold text-[var(--ink-muted)] uppercase">
                         {task.volume} · EST. {task.mins} MIN
                       </div>
                     </div>
@@ -197,6 +211,7 @@ export default function ChamberPage() {
 
                   <Link
                     href={task.href}
+                    onClick={() => playSfx("click")}
                     className="manga-btn bg-[#00C2FF] text-[#121218] px-3 py-1 text-[11px] shrink-0 flex items-center gap-1"
                   >
                     GO <ArrowRight className="w-3 h-3" />
@@ -206,9 +221,13 @@ export default function ChamberPage() {
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t-2 border-dashed border-[#121218]/30 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
+          <div className="mt-5 pt-4 border-t-2 border-dashed border-[var(--border-ink)]/30 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--ink-secondary)]">
             <span>Every panel colored in Shell Break auto-bumps your topic Power Level in SQLite.</span>
-            <Link href="/blueprint" className="text-[#FF3358] font-black underline uppercase">
+            <Link
+              href="/blueprint"
+              onClick={() => playSfx("click")}
+              className="text-[#FF3358] font-black underline uppercase hover:opacity-85"
+            >
               Launch Voice Mock Interview →
             </Link>
           </div>
@@ -230,7 +249,7 @@ export default function ChamberPage() {
           <button
             onClick={dealNewHand}
             disabled={dealing}
-            className="manga-btn bg-[#FFC82C] text-[#121218] px-4 py-2 text-xs flex items-center gap-2"
+            className="manga-btn bg-[#FFC82C] text-[#121218] px-4 py-2 text-xs flex items-center gap-2 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${dealing ? "animate-spin" : ""}`} />
             {dealing ? "SHUFFLING DECK..." : "DEAL FRESH 5-ROUND HAND"}

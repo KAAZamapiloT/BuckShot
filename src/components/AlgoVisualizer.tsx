@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Play, Pause, SkipBack, SkipForward, RotateCcw, Film } from "lucide-react";
+import { playSfx } from "@/lib/sound";
 
 interface VizFrame {
   sfx: string;
@@ -225,8 +226,8 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
   const frame = frames[idx] || frames[0];
 
   return (
-    <div className="manga-panel bg-[#FFFDF7] text-[#121218] overflow-hidden">
-      <div className="bg-[#121218] text-white px-3.5 py-2 flex items-center justify-between gap-2">
+    <div className="manga-panel bg-[var(--card-bg)] text-[var(--ink)] overflow-hidden">
+      <div className="bg-[#121218] text-white px-3.5 py-2 flex items-center justify-between gap-2 border-b-2 border-[var(--border-ink)]">
         <span className="font-manga text-lg tracking-wider text-[#00C2FF] flex items-center gap-1.5">
           <Film className="w-4 h-4" />
           MANGA ACTION REPLAY ({idx + 1}/{frames.length})
@@ -234,40 +235,44 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => {
+              playSfx("click");
               setPlaying(false);
               setIdx(0);
             }}
-            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25"
+            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25 transition-colors"
             title="Reset"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => {
+              playSfx("click");
               setPlaying(false);
               setIdx((p) => Math.max(0, p - 1));
             }}
-            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25"
+            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25 transition-colors"
             title="Prev Frame"
           >
             <SkipBack className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => {
+              playSfx("click");
               if (idx >= frames.length - 1) setIdx(0);
               setPlaying((p) => !p);
             }}
-            className="px-2 py-1 bg-[#FFC82C] text-[#121218] font-black text-[10px] uppercase flex items-center gap-1"
+            className="px-2 py-1 bg-[#FFC82C] hover:bg-[#ffe17d] text-[#121218] font-black text-[10px] uppercase flex items-center gap-1 border border-[#121218] transition-colors"
           >
             {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
             {playing ? "PAUSE" : "PLAY"}
           </button>
           <button
             onClick={() => {
+              playSfx("click");
               setPlaying(false);
               setIdx((p) => Math.min(frames.length - 1, p + 1));
             }}
-            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25"
+            className="p-1 bg-white/10 hover:bg-white/25 border border-white/25 transition-colors"
             title="Next Frame"
           >
             <SkipForward className="w-3.5 h-3.5" />
@@ -275,17 +280,17 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div className="p-4 bg-[#FAF4E6] halftone-dots space-y-3">
+      <div className="p-4 bg-[var(--subpanel-bg)] halftone-dots space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-xs font-bold leading-snug text-[#121218]">{frame.caption}</p>
-          <span className="bg-[#FF3358] text-white font-manga text-base px-2 py-0.5 border-2 border-[#121218] shadow-[2px_2px_0px_#121218] shrink-0 rotate-2">
+          <p className="text-xs font-bold leading-snug text-[var(--ink)]">{frame.caption}</p>
+          <span className="bg-[#FF3358] text-white font-manga text-base px-2 py-0.5 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] shrink-0 rotate-2">
             {frame.sfx}
           </span>
         </div>
 
         {/* Histogram Bars Visual */}
         {frame.bars && (
-          <div className="h-32 flex items-end justify-center gap-2.5 pt-4 px-2 bg-[#FFFDF7] border-2 border-[#121218]">
+          <div className="h-32 flex items-end justify-center gap-2.5 pt-4 px-2 bg-[var(--card-bg)] border-2 border-[var(--border-ink)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             {frame.bars.map((b) => {
               const bg =
                 b.state === "best"
@@ -294,15 +299,15 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
                   ? "#FF3358"
                   : b.state === "stack"
                   ? "#00C2FF"
-                  : "#E5E0D5";
+                  : "var(--border-ink)";
               return (
                 <div key={b.label} className="flex flex-col items-center gap-1 flex-1 max-w-[46px]">
-                  <span className="text-[10px] font-black">{b.value}</span>
+                  <span className="text-[10px] font-black text-[var(--ink)]">{b.value}</span>
                   <div
                     style={{ height: `${b.value * 14}px`, backgroundColor: bg }}
-                    className="w-full border-2 border-[#121218] transition-all duration-300"
+                    className="w-full border-2 border-[var(--border-ink)] transition-all duration-300"
                   />
-                  <span className="text-[9px] font-mono font-bold text-[#4A4A5A]">i={b.label}</span>
+                  <span className="text-[9px] font-mono font-bold text-[var(--ink-muted)]">i={b.label}</span>
                 </div>
               );
             })}
@@ -315,8 +320,8 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
             {frame.cells.map((c) => (
               <div
                 key={c.label}
-                style={{ backgroundColor: c.color || "#FFFDF7" }}
-                className="border-2 border-[#121218] shadow-[2px_2px_0px_#121218] p-2.5 text-center transition-all duration-300"
+                style={{ backgroundColor: c.color || "var(--card-bg)" }}
+                className="border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] p-2.5 text-center transition-all duration-300 text-[#121218]"
               >
                 <div className="text-[9px] font-black uppercase opacity-75">{c.label}</div>
                 <div className="font-mono text-xs font-black mt-0.5">{c.value}</div>
@@ -331,7 +336,7 @@ export function AlgoVisualizer({ slug }: { slug: string }) {
         )}
 
         {frame.meta && (
-          <div className="font-mono text-[11px] font-bold bg-[#121218] text-[#FFC82C] px-2.5 py-1.5">
+          <div className="font-mono text-[11px] font-bold bg-[#121218] text-[#FFC82C] px-2.5 py-1.5 border border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)]">
             {frame.meta}
           </div>
         )}

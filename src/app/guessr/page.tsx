@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Crosshair, Trophy, Flame, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { BOUNTY_GUESSR_POSTERS, BOUNTY_RANK_LADDER } from "@/lib/seed-data";
 import { SenseiAvatar } from "@/components/SenseiAvatar";
+import { playSfx } from "@/lib/sound";
 
 export default function BountyGuessrPage() {
   const [posterIdx, setPosterIdx] = useState(0);
@@ -40,6 +41,14 @@ export default function BountyGuessrPage() {
     setSessionXp((x) => x + stamp.xp);
     setStreak((s) => (diff <= 260 ? s + 1 : 0));
 
+    if (diff <= 100) {
+      playSfx("victory");
+    } else if (diff <= 260) {
+      playSfx("unlock");
+    } else {
+      playSfx("guess");
+    }
+
     const res = await fetch("/api/guessr", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,6 +59,7 @@ export default function BountyGuessrPage() {
   };
 
   const nextPoster = () => {
+    playSfx("deal");
     setPosterIdx((i) => (i + 1) % BOUNTY_GUESSR_POSTERS.length);
     setRevealed(false);
     setGuess(1500);
@@ -60,7 +70,7 @@ export default function BountyGuessrPage() {
       {/* Header Banner */}
       <div className="manga-panel p-5 bg-[#FFC82C] text-[#121218] speed-lines flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase">
+          <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase border border-white/20">
             CALIBRATE YOUR PROBLEM-DIFFICULTY RADAR · CP &amp; SYSTEMS SCALE
           </span>
           <h1 className="font-manga text-4xl sm:text-5xl tracking-wider mt-1 flex items-center gap-2">
@@ -69,14 +79,14 @@ export default function BountyGuessrPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-[#FFFDF7] border-[3px] border-[#121218] shadow-[3px_3px_0px_#121218] px-3.5 py-1.5 text-center">
-            <div className="text-[10px] font-black text-[#4A4A5A]">STREAK</div>
+          <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_var(--shadow-ink)] px-3.5 py-1.5 text-center">
+            <div className="text-[10px] font-black text-[var(--ink-muted)]">STREAK</div>
             <div className="font-manga text-2xl text-[#FF3358] flex items-center gap-1 justify-center">
               <Flame className="w-4 h-4 fill-[#FFC82C]" /> {streak}
             </div>
           </div>
-          <div className="bg-[#FFFDF7] border-[3px] border-[#121218] shadow-[3px_3px_0px_#121218] px-3.5 py-1.5 text-center">
-            <div className="text-[10px] font-black text-[#4A4A5A]">TOTAL XP</div>
+          <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_var(--shadow-ink)] px-3.5 py-1.5 text-center">
+            <div className="text-[10px] font-black text-[var(--ink-muted)]">TOTAL XP</div>
             <div className="font-manga text-2xl text-[#00C2FF]">{totalXp}</div>
           </div>
         </div>
@@ -85,17 +95,17 @@ export default function BountyGuessrPage() {
       {/* BOUNTY GUESSR ARENA (2-COLUMN SPREAD) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Shonen Wanted Poster */}
-        <div className="lg:col-span-7 manga-panel bg-[#FFFDF7] text-[#121218] p-6 halftone-dots relative overflow-hidden">
-          <div className="flex items-center justify-between border-b-4 border-[#121218] pb-3 mb-4">
+        <div className="lg:col-span-7 manga-panel bg-[var(--card-bg)] text-[var(--ink)] p-6 halftone-dots relative overflow-hidden border-[3px] border-[var(--border-ink)]">
+          <div className="flex items-center justify-between border-b-4 border-[var(--border-ink)] pb-3 mb-4">
             <div>
-              <span className="bg-[#FF3358] text-white text-xs font-black px-2.5 py-0.5 border-2 border-[#121218]">
+              <span className="bg-[#FF3358] text-white text-xs font-black px-2.5 py-0.5 border-2 border-[var(--border-ink)]">
                 {poster.codename}
               </span>
-              <span className="ml-2 text-xs font-black uppercase text-[#4A4A5A]">
+              <span className="ml-2 text-xs font-black uppercase text-[var(--ink-muted)]">
                 {poster.origin}
               </span>
             </div>
-            <span className="font-manga text-xl text-[#121218]">
+            <span className="font-manga text-xl text-[var(--ink)]">
               POSTER {(posterIdx % BOUNTY_GUESSR_POSTERS.length) + 1}/{BOUNTY_GUESSR_POSTERS.length}
             </span>
           </div>
@@ -103,10 +113,10 @@ export default function BountyGuessrPage() {
           <h2 className="font-manga text-4xl sm:text-5xl tracking-wide leading-none mb-3">
             {poster.title}
           </h2>
-          <p className="text-sm sm:text-base font-bold text-[#22222E] leading-relaxed mb-4">
+          <p className="text-sm sm:text-base font-bold text-[var(--ink-secondary)] leading-relaxed mb-4">
             {poster.summary}
           </p>
-          <div className="bg-[#FAF4E6] border-2 border-[#121218] px-3.5 py-2 font-mono text-xs font-bold mb-4">
+          <div className="bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] px-3.5 py-2 font-mono text-xs font-bold mb-4 text-[var(--ink)]">
             CONSTRAINTS: {poster.constraints}
           </div>
 
@@ -114,7 +124,7 @@ export default function BountyGuessrPage() {
             {poster.tags.map((t) => (
               <span
                 key={t}
-                className="bg-[#00C2FF]/25 border-2 border-[#121218] text-xs font-black px-2.5 py-0.5 uppercase"
+                className="bg-[#00C2FF]/25 border-2 border-[var(--border-ink)] text-xs font-black px-2.5 py-0.5 uppercase text-[var(--ink)]"
               >
                 {t}
               </span>
@@ -122,10 +132,10 @@ export default function BountyGuessrPage() {
           </div>
 
           {/* Guess Slider */}
-          <div className="bg-[#FAF4E6] border-[3px] border-[#121218] p-4 space-y-3">
+          <div className="bg-[var(--subpanel-bg)] border-[3px] border-[var(--border-ink)] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase">YOUR POWER LEVEL ESTIMATE</span>
-              <span className="font-manga text-3xl text-[#FF3358] bg-white border-2 border-[#121218] px-3 py-0.5 shadow-[2px_2px_0px_#121218]">
+              <span className="text-xs font-black uppercase text-[var(--ink)]">YOUR POWER LEVEL ESTIMATE</span>
+              <span className="font-manga text-3xl text-[#FF3358] bg-[var(--card-bg)] border-2 border-[var(--border-ink)] px-3 py-0.5 shadow-[2px_2px_0px_var(--shadow-ink)]">
                 PL {guess}
               </span>
             </div>
@@ -139,7 +149,7 @@ export default function BountyGuessrPage() {
               onChange={(e) => setGuess(Number(e.target.value))}
               className="w-full accent-[#FF3358]"
             />
-            <div className="flex justify-between text-[10px] font-black text-[#4A4A5A]">
+            <div className="flex justify-between text-[10px] font-black text-[var(--ink-muted)]">
               <span>800 (INITIATE)</span>
               <span>1400 (B-RANK)</span>
               <span>1900 (S-RANK)</span>
@@ -151,8 +161,9 @@ export default function BountyGuessrPage() {
           {!revealed ? (
             <button
               onClick={submitGuess}
-              className="mt-5 w-full manga-btn bg-[#FF3358] text-white py-3 text-base"
+              className="mt-5 w-full manga-btn bg-[#FF3358] text-white py-3 text-base flex items-center justify-center gap-2"
             >
+              <Sparkles className="w-5 h-5" />
               LOCK IN BOUNTY ESTIMATE!!
             </button>
           ) : (
@@ -183,7 +194,7 @@ export default function BountyGuessrPage() {
 
         {/* Right Side: Sensei Reaction + Session Tracker */}
         <div className="lg:col-span-5 space-y-5">
-          <div className="manga-panel p-5 bg-[#FFFDF7] text-[#121218] flex items-center gap-4">
+          <div className="manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] flex items-center gap-4 border-[3px] border-[var(--border-ink)]">
             <SenseiAvatar
               expression={revealed ? stamp.expr : "thinking"}
               sfx={revealed ? stamp.label : "GUESS!"}
@@ -191,7 +202,7 @@ export default function BountyGuessrPage() {
             />
             <div className="space-y-1.5">
               <div className="font-manga text-2xl text-[#FF3358]">WHY CALIBRATE RATINGS?</div>
-              <p className="text-xs font-bold leading-snug text-[#3D3D4E]">
+              <p className="text-xs font-bold leading-snug text-[var(--ink-secondary)]">
                 Great engineers recognize problem difficulty in 30 seconds. Spot whether a prompt
                 needs a clean 1200-PL hash map or a 1900-PL systems invariant before writing a
                 single line!
@@ -202,7 +213,7 @@ export default function BountyGuessrPage() {
             </div>
           </div>
 
-          <div className="manga-panel overflow-hidden bg-[#121218] relative h-52">
+          <div className="manga-panel overflow-hidden bg-[#121218] relative h-52 border-[3px] border-[var(--border-ink)]">
             <img
               src="/art/bounty-poster.jpg"
               alt="BUCKSHOT Tactical Bounty Board"
@@ -211,7 +222,7 @@ export default function BountyGuessrPage() {
                 (e.currentTarget as HTMLImageElement).src = "/art/hero-spread.jpg";
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#121218]/90 via-transparent to-transparent flex items-end p-4">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C14]/90 via-transparent to-transparent flex items-end p-4">
               <div className="text-white">
                 <div className="font-manga text-2xl text-[#FFC82C]">OBJECTIVE 800–3500 SCALE</div>
                 <div className="text-xs font-bold text-white/85">
@@ -224,13 +235,13 @@ export default function BountyGuessrPage() {
       </div>
 
       {/* 6-TIER BOUNTY RANK LADDER */}
-      <section className="manga-panel p-6 bg-[#FFFDF7] text-[#121218] space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-[#121218] pb-3">
+      <section className="manga-panel p-6 bg-[var(--card-bg)] text-[var(--ink)] space-y-4 border-[3px] border-[var(--border-ink)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-[var(--border-ink)] pb-3">
           <h2 className="font-manga text-3xl sm:text-4xl flex items-center gap-2">
             <Trophy className="w-7 h-7 text-[#FFC82C] stroke-[#121218]" />
             THE BOUNTY RANK LADDER (CURRENT: PL {userRating})
           </h2>
-          <span className="bg-[#121218] text-[#00C2FF] text-xs font-black px-3 py-1 uppercase flex items-center gap-1">
+          <span className="bg-[#121218] text-[#00C2FF] text-xs font-black px-3 py-1 uppercase flex items-center gap-1 border border-[var(--border-ink)]">
             <Sparkles className="w-3.5 h-3.5" /> COLORIZE EVERY TIER
           </span>
         </div>
@@ -242,21 +253,21 @@ export default function BountyGuessrPage() {
               <div
                 key={tier.grade}
                 style={{ backgroundColor: unlocked ? tier.color : undefined }}
-                className={`border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] p-4 ${
-                  unlocked ? "manga-unlocked-pop speed-lines text-[#121218]" : "crux-panel-locked text-[#121218]"
+                className={`border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] p-4 ${
+                  unlocked ? "manga-unlocked-pop speed-lines text-[#121218]" : "crux-panel-locked text-[var(--ink)]"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-manga text-3xl bg-[#121218] text-white px-2.5 py-0.5">
                     {tier.grade}-RANK
                   </span>
-                  <span className="bg-[#FFFDF7] border-2 border-[#121218] text-xs font-black px-2 py-0.5 flex items-center gap-1">
+                  <span className="bg-[var(--card-bg)] text-[var(--ink)] border-2 border-[var(--border-ink)] text-xs font-black px-2 py-0.5 flex items-center gap-1">
                     {unlocked && <CheckCircle2 className="w-3.5 h-3.5 text-[#00C875]" />}
                     {tier.minPl}+ PL
                   </span>
                 </div>
                 <div className="font-manga text-2xl">{tier.title}</div>
-                <div className="mt-2 bg-[#FFFDF7]/95 border-2 border-[#121218] p-2.5 text-xs font-bold space-y-1">
+                <div className="mt-2 bg-[var(--card-bg)]/95 border-2 border-[var(--border-ink)] p-2.5 text-xs font-bold space-y-1 text-[var(--ink)]">
                   <div>Trial: {tier.trial}</div>
                   <div className="text-[#FF3358]">Unlock Reward: {tier.reward}</div>
                 </div>

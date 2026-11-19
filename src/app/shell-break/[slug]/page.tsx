@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Sparkles, Lightbulb, CheckCircle2, Lock } from "lucide
 import { SenseiAvatar, type SenseiExpression } from "@/components/SenseiAvatar";
 import { InkCodeEditor } from "@/components/InkCodeEditor";
 import { AlgoVisualizer } from "@/components/AlgoVisualizer";
+import { playSfx } from "@/lib/sound";
 import type { CruxPanel } from "@/lib/seed-data";
 
 interface ChatTurn {
@@ -68,6 +69,7 @@ export default function ShellBreakArenaPage() {
     if (!text || sending || !data) return;
     setSending(true);
     if (!overrideText) setInput("");
+    playSfx("click");
 
     try {
       const res = await fetch("/api/coach/shell-break", {
@@ -77,7 +79,13 @@ export default function ShellBreakArenaPage() {
       });
       const json = await res.json();
       if (json.engineLabel) setEngineLabel(json.engineLabel);
+      if (json.newlyUnlockedIds && json.newlyUnlockedIds.length > 0) {
+        playSfx("unlock");
+      }
       if (json.attempt) {
+        if (json.attempt.sealBroken && !data.attempt.sealBroken) {
+          playSfx("seal-broken");
+        }
         setData((prev) => (prev ? { ...prev, attempt: json.attempt } : prev));
       }
     } finally {
@@ -86,6 +94,7 @@ export default function ShellBreakArenaPage() {
   };
 
   const forceBreakSeal = async () => {
+    playSfx("seal-broken");
     const res = await fetch("/api/coach/shell-break", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -113,27 +122,30 @@ export default function ShellBreakArenaPage() {
     ? "victory"
     : lastSensei?.expression || "idle";
 
+  const nextLockedPanel = problem.cruxPanels.find((p) => !attempt.unlockedPanelIds.includes(p.id));
+
   return (
     <div className="space-y-5">
       {/* Top Chapter Breadcrumb & Score Strip */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/shell-break"
-          className="manga-btn bg-[#FFFDF7] text-[#121218] px-3 py-1.5 text-xs flex items-center gap-1.5"
+          onClick={() => playSfx("click")}
+          className="manga-btn bg-[var(--panel-bg)] text-[var(--ink)] px-3 py-1.5 text-xs flex items-center gap-1.5"
         >
           <ArrowLeft className="w-4 h-4" /> ALL BATTLE CARDS
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-[#121218] text-[#FFC82C] font-manga text-lg px-3 py-0.5 tracking-wider">
+          <span className="bg-[#121218] text-[#FFC82C] font-manga text-lg px-3 py-0.5 tracking-wider border border-[var(--border-ink)]">
             {problem.volumeName} · PL {problem.rating}
           </span>
-          <span className="bg-[#00C2FF] text-[#121218] border-2 border-[#121218] font-black text-xs px-3 py-1">
+          <span className="bg-[#00C2FF] text-[#121218] border-2 border-[var(--border-ink)] font-black text-xs px-3 py-1">
             REASONING SCORE: {attempt.reasoningScore} / 100
           </span>
           {attempt.solved && (
-            <span className="bg-[#00C875] text-[#121218] border-2 border-[#121218] font-black text-xs px-3 py-1">
-              ✓ SOLVED
+            <span className="bg-[#00C875] text-[#121218] border-2 border-[var(--border-ink)] font-black text-xs px-3 py-1 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> SOLVED
             </span>
           )}
         </div>
@@ -141,23 +153,23 @@ export default function ShellBreakArenaPage() {
 
       {/* 2-PAGE OPEN MANGA SPREAD */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start relative">
-        {/* LEFT PAGE: PROBLEM BRIEF + INK-TO-COLOR BREAKTHROUGH PANELS */}
+        {/* LEFT PAGE: PROBLEM BRIEF + ACTION REPLAY + INK-TO-COLOR BREAKTHROUGH PANELS */}
         <div className="xl:col-span-5 space-y-5">
           {/* Problem Brief Panel */}
-          <div className="manga-panel p-5 bg-[#FFFDF7] text-[#121218] halftone-dots">
+          <div className="manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] halftone-dots">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="bg-[#FF3358] text-white text-[10px] font-black px-2 py-0.5 uppercase">
+              <span className="bg-[#FF3358] text-white text-[10px] font-black px-2 py-0.5 uppercase border border-[var(--border-ink)]">
                 {problem.sourceTag} · {problem.topic}
               </span>
-              <span className="text-[11px] font-black text-[#4A4A5A]">PAGE L-01</span>
+              <span className="text-[11px] font-black text-[var(--ink-muted)]">PAGE L-01</span>
             </div>
             <h1 className="font-manga text-3xl sm:text-4xl tracking-wide leading-tight mb-3">
               {problem.title}
             </h1>
-            <p className="text-sm font-medium leading-relaxed text-[#22222E] mb-3">
+            <p className="text-sm font-medium leading-relaxed text-[var(--ink-secondary)] mb-3">
               {problem.brief}
             </p>
-            <div className="bg-[#FAF4E6] border-2 border-[#121218] px-3 py-2 font-mono text-xs font-bold">
+            <div className="bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] px-3 py-2 font-mono text-xs font-bold text-[var(--ink)]">
               {problem.constraints}
             </div>
           </div>
@@ -165,14 +177,14 @@ export default function ShellBreakArenaPage() {
           {/* MANGA ACTION REPLAY STEP-THROUGH VISUALIZER */}
           <AlgoVisualizer slug={problem.slug} />
 
-          {/* INK-TO-COLOR BREAKTHROUGH PANELS (Crux Constellation reimagined as Manga Coloring Panels!) */}
-          <div className="manga-panel p-5 bg-[#FFFDF7] text-[#121218] space-y-4">
-            <div className="flex items-center justify-between border-b-[3px] border-[#121218] pb-2">
+          {/* INK-TO-COLOR BREAKTHROUGH PANELS */}
+          <div className="manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] space-y-4">
+            <div className="flex items-center justify-between border-b-[3px] border-[var(--border-ink)] pb-2">
               <h2 className="font-manga text-2xl tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-5 h-5 text-[#FF3358]" />
                 BREAKTHROUGH PANELS ({attempt.unlockedPanelIds.length}/{problem.cruxPanels.length})
               </h2>
-              <span className="text-[10px] font-black uppercase text-[#4A4A5A]">
+              <span className="text-[10px] font-black uppercase text-[var(--ink-muted)]">
                 INK → FULL COLOR
               </span>
             </div>
@@ -186,10 +198,10 @@ export default function ShellBreakArenaPage() {
                     style={{
                       backgroundColor: isUnlocked ? panel.colorHex : undefined,
                     }}
-                    className={`border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] p-4 relative overflow-hidden ${
+                    className={`border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] p-4 relative overflow-hidden transition-all duration-300 ${
                       isUnlocked
                         ? "crux-panel-unlocked manga-unlocked-pop speed-lines text-[#121218]"
-                        : "crux-panel-locked text-[#121218]"
+                        : "crux-panel-locked text-[var(--ink)]"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -197,13 +209,13 @@ export default function ShellBreakArenaPage() {
                         {panel.panelNo}
                       </span>
                       {isUnlocked ? (
-                        <span className="bg-[#FFFDF7] border-2 border-[#121218] font-manga text-base px-2 py-0 rotate-2 shadow-[2px_2px_0px_#121218] flex items-center gap-1">
+                        <span className="bg-[#FFFDF7] text-[#121218] border-2 border-[#121218] font-manga text-base px-2 py-0 rotate-2 shadow-[2px_2px_0px_#121218] flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#00C875]" />
                           {panel.sfx}
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-black uppercase bg-white/80 border border-[#121218] px-2 py-0.5">
-                          <Lock className="w-3 h-3" /> B&amp;W INK (LOCKED)
+                        <span className="flex items-center gap-1 text-[10px] font-black uppercase bg-[var(--subpanel-bg)] text-[var(--ink)] border border-[var(--border-ink)] px-2 py-0.5">
+                          <Lock className="w-3 h-3 text-[#FFC82C]" /> B&amp;W INK (LOCKED)
                         </span>
                       )}
                     </div>
@@ -212,12 +224,12 @@ export default function ShellBreakArenaPage() {
                       {panel.title}
                     </h3>
 
-                    <div className="mt-2 bg-[#FFFDF7]/95 border-2 border-[#121218] p-2.5 text-xs font-bold leading-snug">
+                    <div className="mt-2 bg-[var(--card-bg)]/95 border-2 border-[var(--border-ink)] p-2.5 text-xs font-bold leading-snug">
                       {isUnlocked ? (
-                        <span className="text-[#121218]">✓ PROVED: {panel.unlockedInsight}</span>
+                        <span className="text-[var(--ink)]">✓ PROVED: {panel.unlockedInsight}</span>
                       ) : (
-                        <span className="text-[#4A4A5A]">
-                          Challenge: Explain this concept to Sensei Reiko in chat to colorize this
+                        <span className="text-[var(--ink-secondary)]">
+                          Challenge: Explain this invariant to Sensei Reiko in chat to colorize this
                           panel!
                         </span>
                       )}
@@ -232,8 +244,8 @@ export default function ShellBreakArenaPage() {
         {/* RIGHT PAGE: SENSEI REIKO SPEECH-BUBBLE COACH + SEALED CODE EDITOR */}
         <div className="xl:col-span-7 space-y-5">
           {/* Sensei Reiko Coaching Panel */}
-          <div className="manga-panel overflow-hidden flex flex-col bg-[#FFFDF7] text-[#121218]">
-            <div className="bg-[#FFC82C] px-4 py-3 border-b-[3px] border-[#121218] flex flex-wrap items-center justify-between gap-3 speed-lines">
+          <div className="manga-panel overflow-hidden flex flex-col bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)]">
+            <div className="bg-[#FFC82C] text-[#121218] px-4 py-3 border-b-[3px] border-[var(--border-ink)] flex flex-wrap items-center justify-between gap-3 speed-lines">
               <div className="flex items-center gap-3">
                 <SenseiAvatar
                   expression={currentExpression}
@@ -244,7 +256,7 @@ export default function ShellBreakArenaPage() {
                   <div className="font-manga text-2xl leading-none tracking-wider">
                     SENSEI REIKO · SOCRATIC SHELL BREAK
                   </div>
-                  <div className="text-[11px] font-black text-[#121218]/80">
+                  <div className="text-[11px] font-black text-[#121218]/85">
                     {engineLabel || "Vygotsky ZPD Scaffolding · Reads Your Editable Dossier"}
                   </div>
                 </div>
@@ -253,28 +265,53 @@ export default function ShellBreakArenaPage() {
               <button
                 onClick={() => sendMessage("Give me a minimal ZPD hint for the next locked panel!")}
                 disabled={sending}
-                className="manga-btn bg-[#FFFDF7] text-[#121218] px-3 py-1.5 text-[11px] flex items-center gap-1"
+                className="manga-btn bg-white text-[#121218] px-3 py-1.5 text-[11px] flex items-center gap-1"
               >
                 <Lightbulb className="w-3.5 h-3.5 text-[#FF3358]" />
                 MINIMAL HINT
               </button>
             </div>
 
+            {/* Quick Socratic Prompt Suggestions */}
+            {nextLockedPanel && (
+              <div className="px-3.5 py-2 bg-[var(--subpanel-bg)] border-b border-[var(--border-ink)]/20 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[10px] font-black uppercase text-[var(--ink-muted)]">QUICK PROMPT:</span>
+                <button
+                  onClick={() => sendMessage(`How do I prove ${nextLockedPanel.title}?`)}
+                  className="text-[10px] font-black bg-[var(--card-bg)] text-[var(--ink)] border border-[var(--border-ink)] px-2 py-0.5 hover:bg-[#00C2FF]/20"
+                >
+                  💡 Prove {nextLockedPanel.panelNo}
+                </button>
+                <button
+                  onClick={() => sendMessage("What invariant prevents redundant re-computation here?")}
+                  className="text-[10px] font-black bg-[var(--card-bg)] text-[var(--ink)] border border-[var(--border-ink)] px-2 py-0.5 hover:bg-[#00C2FF]/20"
+                >
+                  🔍 Invariant Check
+                </button>
+                <button
+                  onClick={() => sendMessage("What edge cases should I guard before coding?")}
+                  className="text-[10px] font-black bg-[var(--card-bg)] text-[var(--ink)] border border-[var(--border-ink)] px-2 py-0.5 hover:bg-[#00C2FF]/20"
+                >
+                  🛡️ Edge Cases
+                </button>
+              </div>
+            )}
+
             {/* Speech Bubble Chat Feed */}
-            <div className="p-4 space-y-3 max-h-[340px] overflow-y-auto bg-[#FAF4E6] halftone-dots">
+            <div className="p-4 space-y-3 max-h-[340px] overflow-y-auto bg-[var(--subpanel-bg)] halftone-dots">
               {attempt.messages.map((msg, i) => (
                 <div
                   key={i}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] border-[2.5px] border-[#121218] px-3.5 py-2.5 text-xs sm:text-sm font-bold leading-snug ${
+                    className={`max-w-[88%] border-[2.5px] border-[var(--border-ink)] px-3.5 py-2.5 text-xs sm:text-sm font-bold leading-snug ${
                       msg.role === "user"
-                        ? "bg-[#00C2FF] text-[#121218] shadow-[3px_3px_0px_#121218]"
-                        : "bg-[#FFFDF7] text-[#121218] shadow-[4px_4px_0px_#FF3358]"
+                        ? "bg-[#00C2FF] text-[#121218] shadow-[3px_3px_0px_var(--shadow-ink)]"
+                        : "bg-[var(--card-bg)] text-[var(--ink)] shadow-[4px_4px_0px_#FF3358]"
                     }`}
                   >
-                    <div className="text-[10px] font-black uppercase opacity-70 mb-1 flex items-center justify-between gap-2">
+                    <div className="text-[10px] font-black uppercase opacity-75 mb-1 flex items-center justify-between gap-2">
                       <span>{msg.role === "user" ? "YOU (PROOF)" : "SENSEI REIKO"}</span>
                       {msg.sfx && (
                         <span className="bg-[#FF3358] text-white px-1.5 py-0 font-manga text-xs tracking-wider">
@@ -282,7 +319,7 @@ export default function ShellBreakArenaPage() {
                         </span>
                       )}
                     </div>
-                    {msg.text}
+                    <div className="whitespace-pre-line">{msg.text}</div>
                   </div>
                 </div>
               ))}
@@ -295,18 +332,18 @@ export default function ShellBreakArenaPage() {
                 e.preventDefault();
                 sendMessage();
               }}
-              className="p-3 bg-[#FFFDF7] border-t-[3px] border-[#121218] flex gap-2"
+              className="p-3 bg-[var(--card-bg)] border-t-[3px] border-[var(--border-ink)] flex gap-2"
             >
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Explain your invariant, counterexample, or complexity proof to colorize the panels..."
-                className="flex-1 border-[2.5px] border-[#121218] bg-[#FAF4E6] px-3 py-2 text-xs sm:text-sm font-bold focus:outline-none focus:bg-white"
+                className="flex-1 border-[2.5px] border-[var(--border-ink)] bg-[var(--input-bg)] text-[var(--ink)] px-3 py-2 text-xs sm:text-sm font-bold focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={sending || !input.trim()}
-                className="manga-btn bg-[#FF3358] text-white px-4 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50"
+                className="manga-btn bg-[#FF3358] text-white px-5 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
                 {sending ? "CHECKING..." : "PROVE"}

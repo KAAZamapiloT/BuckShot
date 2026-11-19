@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ["class", '[data-manga-mode="midnight"]'],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,9 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: "#FAF4E6",
-        panel: "#FFFDF7",
-        ink: "#121218",
+        paper: "var(--paper-bg)",
+        panel: "var(--panel-bg)",
+        subpanel: "var(--subpanel-bg)",
+        card: "var(--card-bg)",
+        ink: "var(--ink)",
+        "ink-muted": "var(--ink-muted)",
         crimson: "#FF3358",
         cyan: {
           ki: "#00C2FF",
@@ -31,9 +35,9 @@ const config: Config = {
         mono: ["var(--font-jetbrains-mono)", "monospace"],
       },
       boxShadow: {
-        ink: "5px 5px 0px #121218",
-        "ink-sm": "3px 3px 0px #121218",
-        "ink-lg": "8px 8px 0px #121218",
+        ink: "5px 5px 0px var(--shadow-ink, #121218)",
+        "ink-sm": "3px 3px 0px var(--shadow-ink, #121218)",
+        "ink-lg": "8px 8px 0px var(--shadow-ink, #121218)",
         "ink-crimson": "5px 5px 0px #FF3358",
         "ink-cyan": "5px 5px 0px #00C2FF",
       },
