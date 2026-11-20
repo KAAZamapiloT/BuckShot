@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { RefreshCw, CheckSquare, Square, Flame, Target, ArrowRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { RefreshCw, CheckSquare, Square, Flame, Target, ArrowRight, Skull, Building2 } from "lucide-react";
 import { CombatRadar } from "@/components/CombatRadar";
 import { BattleCard, type BattleCardData } from "@/components/BattleCard";
 import { SenseiAvatar } from "@/components/SenseiAvatar";
 import { SprintTimer } from "@/components/SprintTimer";
 import { playSfx } from "@/lib/sound";
+import { COMPANY_DOSSIERS } from "@/lib/intel-data";
+import { getGrimoireDefeats, type DefeatRecord } from "@/lib/grimoire";
 
 interface SprintTask {
   id: string;
@@ -41,19 +44,31 @@ interface ChamberState {
   problems: BattleCardData[];
 }
 
-export default function ChamberPage() {
+function ChamberContent() {
+  const searchParams = useSearchParams();
+  const initialCompany = searchParams?.get("company") || "all";
+
   const [state, setState] = useState<ChamberState | null>(null);
   const [dealing, setDealing] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<string>(initialCompany);
+  const [onlyRevenge, setOnlyRevenge] = useState(false);
+  const [defeats, setDefeats] = useState<DefeatRecord[]>([]);
 
   const load = async () => {
     const res = await fetch("/api/bootstrap");
     const json = await res.json();
     setState(json);
+    setDefeats(getGrimoireDefeats());
   };
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const c = searchParams?.get("company");
+    if (c) setSelectedCompany(c);
+  }, [searchParams]);
 
   const dealNewHand = async () => {
     setDealing(true);
@@ -96,7 +111,10 @@ export default function ChamberPage() {
   }
 
   const problemBySlug = Object.fromEntries(state.problems.map((p) => [p.slug, p]));
-  const handCards: BattleCardData[] = state.profile.magazineHand.flatMap((slot) => {
+  const unresolvedSlugs = new Set(defeats.filter((d) => !d.resolved).map((d) => d.problemSlug));
+
+  // Build deck with company & revenge filters
+  let filteredCards: BattleCardData[] = state.profile.magazineHand.flatMap((slot) => {
     const p = problemBySlug[slot.problemSlug];
     if (!p) return [];
     return [
@@ -108,6 +126,26 @@ export default function ChamberPage() {
       },
     ];
   });
+
+  // If company selected, include tailored recommended cards
+  if (selectedCompany !== "all" && COMPANY_DOSSIERS[selectedCompany]) {
+    const comp = COMPANY_DOSSIERS[selectedCompany];
+    const companyProblemSlugs = new Set(comp.recommendedSlugs);
+    // Prioritize company cards
+    filteredCards = state.problems
+      .filter((p) => companyProblemSlugs.has(p.slug))
+      .map((p) => ({
+        ...p,
+        slotLabel: `${comp.name.toUpperCase()} INTEL`,
+        roleBadge: "TARGET LOOP",
+        reason: `Tested in ${comp.name} onsite loops.`,
+      }));
+  }
+
+  // If only revenge filter active
+  if (onlyRevenge) {
+    filteredCards = filteredCards.filter((c) => unresolvedSlugs.has(c.slug));
+  }
 
   return (
     <div className="space-y-6">
@@ -157,26 +195,28 @@ export default function ChamberPage() {
             <div className="mt-4 bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] p-3 flex items-center gap-3">
               <SenseiAvatar expression="thinking" size="sm" />
               <p className="text-xs font-bold leading-snug">
-                Your lowest axis drives Round 02 of your Magazine. Crush{" "}
-                <strong className="text-[#FF3358]">Concurrency</strong> &amp;{" "}
-                <strong className="text-[#7C4DFF]">DP</strong> panels to hit A-Rank (1650+ PL)!
+                Your lowest axis drives Round 02 of your Magazine. Crush weak invariants before jumping into the code editor!
               </p>
             </div>
           </div>
 
-          {/* Interactive Technical Mock Countdown Timer */}
-          <SprintTimer defaultMinutes={45} />
+          {/* 45-MINUTE MOCK INTERVIEW SPRINT TIMER */}
+          <SprintTimer />
         </div>
 
-        {/* Sprint Daily Agenda */}
+        {/* Right Page: Daily Sprint Tasks */}
         <div className="lg:col-span-7 manga-panel p-5 bg-[var(--card-bg)] text-[var(--ink)] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b-[3px] border-[var(--border-ink)] pb-2 mb-4">
-              <h2 className="font-manga text-2xl tracking-wide flex items-center gap-2">
-                <Flame className="w-6 h-6 text-[#FF3358]" />
-                TODAY&apos;S TRAINING ARC AGENDA
-              </h2>
-              <span className="text-xs font-black uppercase bg-[#FFC82C] text-[#121218] border-2 border-[var(--border-ink)] px-2 py-0.5">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#FF3358] tracking-wider">
+                  TODAY&apos;S MISSION
+                </span>
+                <h2 className="font-manga text-2xl sm:text-3xl tracking-wide">
+                  ACTIVE SPRINT AGENDA
+                </h2>
+              </div>
+              <span className="bg-[#121218] text-[#00C875] font-mono text-xs font-black px-2.5 py-1 border border-[var(--border-ink)]">
                 {state.profile.sprintAgenda.filter((t) => t.done).length}/
                 {state.profile.sprintAgenda.length} CLEARED
               </span>
@@ -234,7 +274,7 @@ export default function ChamberPage() {
         </div>
       </div>
 
-      {/* ADAPTIVE 5-ROUND MAGAZINE */}
+      {/* ADAPTIVE 5-ROUND MAGAZINE & COMPANY INTEL FILTER */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -256,12 +296,92 @@ export default function ChamberPage() {
           </button>
         </div>
 
+        {/* Company & Revenge Filter Bar */}
+        <div className="flex items-center gap-2 flex-wrap bg-[var(--card-bg)] p-3 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)]">
+          <span className="text-[10px] font-black uppercase text-[var(--ink-muted)] flex items-center gap-1 mr-1">
+            <Building2 className="w-3.5 h-3.5 text-[#FF3358]" />
+            COMPANY LOOP:
+          </span>
+
+          <button
+            onClick={() => {
+              playSfx("click");
+              setSelectedCompany("all");
+            }}
+            className={`px-2.5 py-1 text-[10px] font-black uppercase border transition-colors ${
+              selectedCompany === "all"
+                ? "bg-[#121218] text-[#FFC82C] border-[#121218]"
+                : "bg-[var(--subpanel-bg)] text-[var(--ink)] border-[var(--border-ink)] hover:bg-[#FFC82C]/20"
+            }`}
+          >
+            ALL (ADAPTIVE ELO)
+          </button>
+
+          {Object.values(COMPANY_DOSSIERS).map((comp) => {
+            const active = selectedCompany === comp.id;
+            return (
+              <button
+                key={comp.id}
+                onClick={() => {
+                  playSfx("click");
+                  setSelectedCompany(comp.id);
+                }}
+                className={`px-2.5 py-1 text-[10px] font-black uppercase border transition-colors flex items-center gap-1 ${
+                  active
+                    ? "bg-[#FF3358] text-white border-[#121218]"
+                    : "bg-[var(--subpanel-bg)] text-[var(--ink)] border-[var(--border-ink)] hover:bg-[#FF3358]/20"
+                }`}
+              >
+                <span>{comp.logoEmoji}</span>
+                <span>{comp.name}</span>
+              </button>
+            );
+          })}
+
+          {unresolvedSlugs.size > 0 && (
+            <button
+              onClick={() => {
+                playSfx("click");
+                setOnlyRevenge(!onlyRevenge);
+              }}
+              className={`ml-auto px-2.5 py-1 text-[10px] font-black uppercase border transition-colors flex items-center gap-1 ${
+                onlyRevenge
+                  ? "bg-[#FF3358] text-white border-[#121218] animate-pulse"
+                  : "bg-[#FF3358]/15 text-[#FF3358] border-[#FF3358]"
+              }`}
+            >
+              <Skull className="w-3 h-3" />
+              <span>SEEK REVENGE ({unresolvedSlugs.size})</span>
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {handCards.map((card) => (
-            <BattleCard key={`${card.slotLabel}-${card.slug}`} card={card} />
-          ))}
+          {filteredCards.length > 0 ? (
+            filteredCards.map((card) => (
+              <BattleCard key={`${card.slotLabel}-${card.slug}`} card={card} />
+            ))
+          ) : (
+            <div className="col-span-full manga-panel p-8 text-center font-manga text-xl text-[var(--ink-muted)]">
+              NO BATTLE CARDS MATCHING FILTER. SWITCH TO &quot;ALL&quot; TO SEE DEALT HAND!
+            </div>
+          )}
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ChamberPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="manga-panel p-12 text-center font-manga text-3xl">
+          LOADING THE CHAMBER...
+        </div>
+      }
+    >
+      <ChamberContent />
+    </Suspense>
   );
 }

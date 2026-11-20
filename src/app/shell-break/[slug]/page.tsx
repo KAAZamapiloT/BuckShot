@@ -3,11 +3,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, Sparkles, Lightbulb, CheckCircle2, Lock } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Lightbulb, CheckCircle2, Lock, Flame, AlertTriangle, ShieldCheck, Skull } from "lucide-react";
 import { SenseiAvatar, type SenseiExpression } from "@/components/SenseiAvatar";
 import { InkCodeEditor } from "@/components/InkCodeEditor";
 import { AlgoVisualizer } from "@/components/AlgoVisualizer";
 import { playSfx } from "@/lib/sound";
+import { PHASE_2_BOSS_TWISTS, type Phase2BossTwist } from "@/lib/intel-data";
+import { avengeDefeat, hasUnresolvedDefeat, logDefeat, type DefeatRecord } from "@/lib/grimoire";
 import type { CruxPanel } from "@/lib/seed-data";
 
 interface ChatTurn {
@@ -48,12 +50,21 @@ export default function ShellBreakArenaPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [engineLabel, setEngineLabel] = useState<string>("");
+  const [phase2Active, setPhase2Active] = useState(false);
+  const [phase2Solved, setPhase2Solved] = useState(false);
+  const [activeDefeat, setActiveDefeat] = useState<DefeatRecord | null>(null);
+  const [logDefeatOpen, setLogDefeatOpen] = useState(false);
+  const [defeatCategory, setDefeatCategory] = useState<"OFF_BY_ONE" | "MEMORY_BLOWUP" | "RACE_CONDITION" | "SUBOPTIMAL_TIME" | "EDGE_CASE">("EDGE_CASE");
+  const [defeatNotes, setDefeatNotes] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const phase2Data: Phase2BossTwist | undefined = PHASE_2_BOSS_TWISTS[slug];
 
   const loadProblem = async () => {
     const res = await fetch(`/api/problems?slug=${encodeURIComponent(slug)}`);
     const json = await res.json();
     setData(json);
+    setActiveDefeat(hasUnresolvedDefeat(slug));
   };
 
   useEffect(() => {
@@ -137,6 +148,12 @@ export default function ShellBreakArenaPage() {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
+          {activeDefeat && (
+            <span className="bg-[#FF3358] text-white font-black text-xs px-2.5 py-1 flex items-center gap-1 border-2 border-[#121218] animate-pulse shadow-[2px_2px_0px_#121218]">
+              <Flame className="w-3.5 h-3.5 fill-current" />
+              REVENGE MISSION ({activeDefeat.failedCount}X DEFEATED)
+            </span>
+          )}
           <span className="bg-[#121218] text-[#FFC82C] font-manga text-lg px-3 py-0.5 tracking-wider border border-[var(--border-ink)]">
             {problem.volumeName} · PL {problem.rating}
           </span>
@@ -148,8 +165,105 @@ export default function ShellBreakArenaPage() {
               <CheckCircle2 className="w-3.5 h-3.5" /> SOLVED
             </span>
           )}
+          {phase2Solved && (
+            <span className="bg-[#7C4DFF] text-white border-2 border-[var(--border-ink)] font-black text-xs px-3 py-1 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> PHASE 2 CONQUERED
+            </span>
+          )}
         </div>
       </div>
+
+      {/* ACTIVE REVENGE BANNER FROM GRIMOIRE */}
+      {activeDefeat && (
+        <div className="p-3.5 bg-[#FF3358]/15 border-2 border-[#FF3358] text-[var(--ink)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[4px_4px_0px_#FF3358]">
+          <div className="flex items-start gap-2.5">
+            <Skull className="w-5 h-5 text-[#FF3358] shrink-0 mt-0.5" />
+            <div>
+              <div className="text-[11px] font-black uppercase text-[#FF3358] tracking-wider">
+                GRIMOIRE DEFECT RECORD · {activeDefeat.flawLabel}
+              </div>
+              <p className="text-xs font-bold leading-snug mt-0.5">
+                Past Mistake: &quot;{activeDefeat.mistakeNotes}&quot; &mdash;{" "}
+                <span className="text-[#00C2FF]">Remediation: {activeDefeat.senseiRemediation}</span>
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              playSfx("victory");
+              avengeDefeat(slug);
+              setActiveDefeat(null);
+            }}
+            className="px-2.5 py-1 bg-[#FF3358] hover:bg-[#ff4d6e] text-white text-[10px] font-black uppercase shrink-0 border border-[#121218]"
+          >
+            MARK AVENGED ✓
+          </button>
+        </div>
+      )}
+
+      {/* PHASE 2 BOSS TWIST ALERT BANNER */}
+      {phase2Data && (
+        <div
+          className={`manga-panel p-4 transition-all duration-300 ${
+            phase2Active
+              ? "bg-[#121218] text-white border-4 border-[#FF3358] shadow-[6px_6px_0px_#FF3358]"
+              : "bg-[var(--card-bg)] text-[var(--ink)] border-2 border-dashed border-[#FF3358]/50"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="bg-[#FF3358] text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-widest flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {phase2Active ? "BOSS PHASE 2 ACTIVE" : "OPTIONAL BOSS TWIST"}
+                </span>
+                <span className="text-xs font-mono font-bold text-[#FFC82C]">
+                  +{phase2Data.xpReward} XP
+                </span>
+              </div>
+              <h3 className="font-manga text-xl text-[#00C2FF]">{phase2Data.bossTitle}</h3>
+              <p className="text-xs font-medium text-white/80 max-w-3xl">
+                {phase2Data.twistConstraint}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {!phase2Active ? (
+                <button
+                  onClick={() => {
+                    playSfx("seal-broken");
+                    setPhase2Active(true);
+                  }}
+                  className="px-3.5 py-2 bg-[#FF3358] hover:bg-[#ff4d6e] text-white font-black text-xs uppercase border-2 border-white/40 shadow-[3px_3px_0px_rgba(0,0,0,0.5)] transition-all flex items-center gap-1.5"
+                >
+                  <Flame className="w-4 h-4 fill-current" />
+                  ENGAGE PHASE 2 TWIST
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      sendMessage(`Phase 2 Challenge: ${phase2Data.senseiInterrogation}`);
+                    }}
+                    className="px-3 py-1.5 bg-[#00C2FF] hover:bg-[#5cd7ff] text-[#121218] font-black text-xs uppercase border border-[#121218]"
+                  >
+                    DISCUSS PROOF WITH SENSEI
+                  </button>
+                  <button
+                    onClick={() => {
+                      playSfx("victory");
+                      setPhase2Solved(true);
+                    }}
+                    className="px-3 py-1.5 bg-[#00C875] text-[#121218] font-black text-xs uppercase border border-[#121218]"
+                  >
+                    CLAIM PHASE 2 VICTORY ✓
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2-PAGE OPEN MANGA SPREAD */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start relative">
@@ -358,12 +472,111 @@ export default function ShellBreakArenaPage() {
             initialCode={attempt.submittedCode}
             sealBroken={attempt.sealBroken}
             onForceBreakSeal={forceBreakSeal}
-            onSolved={() =>
+            onSolved={() => {
+              playSfx("victory");
+              avengeDefeat(problem.slug);
+              setActiveDefeat(null);
               setData((prev) =>
                 prev ? { ...prev, attempt: { ...prev.attempt, solved: true } } : prev
-              )
-            }
+              );
+            }}
           />
+
+          {/* Log Flaw to Grimoire Bar */}
+          <div className="flex items-center justify-between p-3 bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] text-xs font-bold">
+            <span className="text-[var(--ink-secondary)] flex items-center gap-1.5">
+              <Skull className="w-4 h-4 text-[#FF3358]" />
+              Stuck or hit an unhandled edge case / timeout?
+            </span>
+            <button
+              onClick={() => {
+                playSfx("click");
+                setLogDefeatOpen(true);
+              }}
+              className="px-2.5 py-1 bg-[var(--card-bg)] hover:bg-[#FF3358] hover:text-white text-[var(--ink)] border border-[var(--border-ink)] text-[10px] font-black uppercase transition-colors"
+            >
+              LOG FLAW IN GRIMOIRE +
+            </button>
+          </div>
+
+          {/* Grimoire Defeat Modal */}
+          {logDefeatOpen && (
+            <div className="p-4 bg-[var(--card-bg)] border-4 border-[#FF3358] shadow-[6px_6px_0px_#FF3358] space-y-3">
+              <div className="flex items-center justify-between border-b-2 border-[var(--border-ink)] pb-2">
+                <span className="font-manga text-xl text-[#FF3358] flex items-center gap-1.5">
+                  <Skull className="w-5 h-5 text-[#FF3358]" />
+                  DOCUMENT FLAW IN THE GRIMOIRE OF DEFEATS
+                </span>
+                <button
+                  onClick={() => setLogDefeatOpen(false)}
+                  className="text-xs font-black px-2 py-0.5 bg-[#121218] text-white"
+                >
+                  CANCEL
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-[var(--ink-muted)] block">
+                  FLAW CATEGORY:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {(
+                    [
+                      ["EDGE_CASE", "Unhandled Edge Case"],
+                      ["OFF_BY_ONE", "Off-by-One Boundary"],
+                      ["RACE_CONDITION", "Race Condition / Memory Barrier"],
+                      ["SUBOPTIMAL_TIME", "Suboptimal Quadratic O(N²)"],
+                      ["MEMORY_BLOWUP", "Memory / Heap Blowup"],
+                    ] as const
+                  ).map(([cat, label]) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setDefeatCategory(cat)}
+                      className={`p-2 text-left text-[10px] font-black border transition-all ${
+                        defeatCategory === cat
+                          ? "bg-[#FF3358] text-white border-[#121218] shadow-[2px_2px_0px_#121218]"
+                          : "bg-[var(--subpanel-bg)] text-[var(--ink)] border-[var(--border-ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="text-[10px] font-black uppercase text-[var(--ink-muted)] block mt-2">
+                  WHAT BROKE? (MISTAKE NOTES):
+                </label>
+                <textarea
+                  rows={2}
+                  value={defeatNotes}
+                  onChange={(e) => setDefeatNotes(e.target.value)}
+                  placeholder="e.g. Forgot empty prefix seed {0: 1}; loop caused off-by-one index error on N=1..."
+                  className="w-full border-2 border-[var(--border-ink)] bg-[var(--input-bg)] text-[var(--ink)] p-2 text-xs font-bold"
+                />
+
+                <button
+                  onClick={() => {
+                    if (!defeatNotes.trim()) return;
+                    playSfx("unlock");
+                    logDefeat(
+                      problem.slug,
+                      problem.title,
+                      problem.topic,
+                      defeatCategory,
+                      defeatNotes.trim()
+                    );
+                    setActiveDefeat(hasUnresolvedDefeat(problem.slug));
+                    setLogDefeatOpen(false);
+                    setDefeatNotes("");
+                  }}
+                  className="w-full py-2 bg-[#FF3358] hover:bg-[#ff4d6e] text-white font-black text-xs uppercase border-2 border-[#121218] shadow-[3px_3px_0px_#121218]"
+                >
+                  SAVE DEFEAT RECORD (TAG PROBLEM FOR REVENGE)
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

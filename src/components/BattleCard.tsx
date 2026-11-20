@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Flame } from "lucide-react";
+import { ArrowRight, CheckCircle2, Flame, Skull } from "lucide-react";
 import { playSfx } from "@/lib/sound";
+import { hasUnresolvedDefeat, type DefeatRecord } from "@/lib/grimoire";
 
 const ACCENT_MAP: Record<string, { bg: string; badgeLight: string; badgeDark: string }> = {
   crimson: { bg: "#FF3358", badgeLight: "#FFE0E6", badgeDark: "rgba(255, 51, 88, 0.25)" },
@@ -32,23 +33,39 @@ export interface BattleCardData {
 export function BattleCard({ card }: { card: BattleCardData }) {
   const palette = ACCENT_MAP[card.accentColor] ?? ACCENT_MAP.cyan;
   const pct = Math.round((card.unlockedCount / Math.max(1, card.totalPanels)) * 100);
+  const [defeat, setDefeat] = useState<DefeatRecord | null>(null);
+
+  useEffect(() => {
+    setDefeat(hasUnresolvedDefeat(card.slug));
+  }, [card.slug]);
 
   return (
     <Link
       href={`/shell-break/${card.slug}`}
       onClick={() => playSfx("click")}
       className={`group flex flex-col justify-between manga-panel p-0 overflow-hidden transition-all duration-200 hover:-translate-y-1.5 hover:shadow-[7px_7px_0px_var(--shadow-ink)] ${
-        card.solved ? "manga-unlocked-pop" : "manga-color-layer"
+        card.solved
+          ? "manga-unlocked-pop"
+          : defeat
+          ? "border-[#FF3358] shadow-[4px_4px_0px_#FF3358]"
+          : "manga-color-layer"
       }`}
     >
       {/* Top Colored Foil Header */}
       <div
-        style={{ backgroundColor: palette.bg }}
+        style={{ backgroundColor: defeat ? "#FF3358" : palette.bg }}
         className="px-3.5 py-2.5 border-b-[3px] border-[var(--border-ink)] flex items-center justify-between speed-lines"
       >
-        <span className="bg-[#121218] text-white text-[10px] font-black tracking-widest px-2 py-0.5 uppercase border border-white/20">
-          {card.slotLabel ? `${card.slotLabel} · ${card.roleBadge}` : card.sourceTag}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="bg-[#121218] text-white text-[10px] font-black tracking-widest px-2 py-0.5 uppercase border border-white/20">
+            {card.slotLabel ? `${card.slotLabel} · ${card.roleBadge}` : card.sourceTag}
+          </span>
+          {defeat && (
+            <span className="bg-white text-[#FF3358] text-[9px] font-black px-1.5 py-0.5 uppercase border border-[#121218] flex items-center gap-0.5 animate-pulse">
+              <Skull className="w-3 h-3" /> REVENGE
+            </span>
+          )}
+        </div>
         <span className="bg-[#FFFDF7] text-[#121218] border-2 border-[#121218] font-manga text-base px-2 leading-tight shadow-[2px_2px_0px_#121218]">
           PL {card.rating}
         </span>

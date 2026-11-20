@@ -21,9 +21,12 @@ import {
   MessageCircle,
   Volume2,
   VolumeX,
+  GitBranch,
+  Building2,
 } from "lucide-react";
 import { SEED_PROBLEMS, MANGA_VOLUMES } from "@/lib/seed-data";
 import { SenseiAvatar, type SenseiExpression } from "@/components/SenseiAvatar";
+import { ProgressionModal } from "@/components/ProgressionModal";
 import { isSoundEnabled, toggleSound, playSfx } from "@/lib/sound";
 
 type MangaMode = "color" | "ink" | "midnight";
@@ -32,6 +35,8 @@ const NAV_TABS = [
   { href: "/", label: "COVER", icon: BookOpen, color: "#FFC82C" },
   { href: "/chamber", label: "CHAMBER", icon: Flame, color: "#FF3358" },
   { href: "/shell-break", label: "SHELL BREAK", icon: Crosshair, color: "#00C2FF" },
+  { href: "/tree", label: "JUTSU TREE", icon: GitBranch, color: "#00C2FF" },
+  { href: "/intel", label: "INTEL", icon: Building2, color: "#FF3358" },
   { href: "/blueprint", label: "BLUEPRINT", icon: Layers, color: "#00C875" },
   { href: "/guessr", label: "GUESSR", icon: Trophy, color: "#FFC82C" },
   { href: "/volumes", label: "VOLUMES", icon: Sparkles, color: "#7C4DFF" },
@@ -50,6 +55,8 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [mode, setMode] = useState<MangaMode>("color");
   const [soundOn, setSoundOn] = useState(true);
+  const [progressionOpen, setProgressionOpen] = useState(false);
+  const [userXp, setUserXp] = useState(2450);
 
   // Ctrl+K Quick Manga Search
   const [searchOpen, setSearchOpen] = useState(false);
@@ -219,8 +226,21 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Right Utilities: Quick Dark Mode Toggle + Manga Theme Switcher + SFX Toggle + Search */}
+          {/* Right Utilities: Rank / XP Pill + Light/Dark Quick Toggle + Manga Theme Switcher + SFX Toggle + Search */}
           <div className="flex items-center gap-2">
+            {/* Shonen Rank & Quests Pill */}
+            <button
+              onClick={() => {
+                playSfx("click");
+                setProgressionOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#121218] text-[#FFC82C] border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-[10px] font-black uppercase hover:bg-[#202132] transition-colors"
+              title="View Shonen Exam Progression, Daily Quests & Grimoire of Defeats"
+            >
+              <span>⚡ JŌNIN</span>
+              <span className="hidden md:inline font-mono text-white/80">· {userXp} XP</span>
+            </button>
+
             {/* Direct Light/Dark Quick Toggle */}
             <button
               onClick={toggleDarkMode}
@@ -473,6 +493,12 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
             </form>
           </div>
         )}
+
+        {/* Global Shonen Progression & Quests Modal */}
+        <ProgressionModal
+          open={progressionOpen}
+          onClose={() => setProgressionOpen(false)}
+        />
       </div>
     </div>
   );
