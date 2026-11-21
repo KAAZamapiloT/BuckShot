@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Send, Sparkles, Lightbulb, CheckCircle2, Lock, Flame, AlertTriangle, ShieldCheck, Skull } from "lucide-react";
 import { SenseiAvatar, type SenseiExpression } from "@/components/SenseiAvatar";
 import { InkCodeEditor } from "@/components/InkCodeEditor";
+import { challengeWarmups } from "@/lib/challenge-warmups";
 import { AlgoVisualizer } from "@/components/AlgoVisualizer";
 import { playSfx } from "@/lib/sound";
 import { PHASE_2_BOSS_TWISTS, type Phase2BossTwist } from "@/lib/intel-data";
@@ -133,6 +134,7 @@ export default function ShellBreakArenaPage() {
     ? "victory"
     : lastSensei?.expression || "idle";
 
+  const warmup = challengeWarmups[problem.slug];
   const nextLockedPanel = problem.cruxPanels.find((p) => !attempt.unlockedPanelIds.includes(p.id));
 
   return (
@@ -286,6 +288,16 @@ export default function ShellBreakArenaPage() {
             <div className="bg-[var(--subpanel-bg)] border-2 border-[var(--border-ink)] px-3 py-2 font-mono text-xs font-bold text-[var(--ink)]">
               {problem.constraints}
             </div>
+            {warmup && (
+              <section className="mt-4 border-t border-[var(--border-muted)] pt-3" key={problem.slug}>
+                <h2 className="font-manga text-xl tracking-wide">Quick warm-up</h2>
+                <p className="mt-1 text-sm leading-relaxed">{warmup.prompt}</p>
+                <details className="mt-2 text-sm">
+                  <summary className="cursor-pointer py-1 font-bold">Check your reasoning</summary>
+                  <p className="mt-1 leading-relaxed">{warmup.explanation}</p>
+                </details>
+              </section>
+            )}
           </div>
 
           {/* MANGA ACTION REPLAY STEP-THROUGH VISUALIZER */}

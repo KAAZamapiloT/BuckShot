@@ -30,16 +30,15 @@ export default function ShellBreakIndexPage() {
       <div className="manga-panel p-5 bg-[#00C2FF] text-[#121218] speed-lines flex flex-wrap items-center justify-between gap-4 border-[3px] border-[var(--border-ink)]">
         <div>
           <span className="bg-[#121218] text-white text-[10px] font-black px-2 py-0.5 uppercase border border-white/20">
-            PROOF-BEFORE-CODE · INK-TO-COLOR BREAKTHROUGH ENGINE
+            Challenge library
           </span>
           <h1 className="font-manga text-4xl sm:text-5xl tracking-wider mt-1 flex items-center gap-2">
             <Crosshair className="w-9 h-9" />
             SHELL BREAK ARENA
           </h1>
           <p className="text-xs sm:text-sm font-bold max-w-2xl mt-1 text-[#121218]/90">
-            Pick a Battle Card below. Every problem locks the code editor behind 2–3 black-and-white
-            manga panels—prove each invariant to Sensei Reiko to flood the page with color and break
-            the seal.
+            Choose a problem and try its warm-up by hand. Check your reasoning, then
+            work through the proof panels with Sensei Reiko to unlock the code editor.
           </p>
         </div>
 

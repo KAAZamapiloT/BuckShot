@@ -10,17 +10,13 @@ import {
   Layers,
   ScrollText,
   Sparkles,
-  Palette,
-  Contrast,
-  Moon,
-  Sun,
+  Menu,
   Search,
   Trophy,
   X,
   Send,
   MessageCircle,
-  Volume2,
-  VolumeX,
+
   GitBranch,
   Building2,
 } from "lucide-react";
@@ -32,15 +28,15 @@ import { isSoundEnabled, toggleSound, playSfx } from "@/lib/sound";
 type MangaMode = "color" | "ink" | "midnight";
 
 const NAV_TABS = [
-  { href: "/", label: "COVER", icon: BookOpen, color: "#FFC82C" },
-  { href: "/chamber", label: "CHAMBER", icon: Flame, color: "#FF3358" },
-  { href: "/shell-break", label: "SHELL BREAK", icon: Crosshair, color: "#00C2FF" },
-  { href: "/tree", label: "JUTSU TREE", icon: GitBranch, color: "#00C2FF" },
-  { href: "/intel", label: "INTEL", icon: Building2, color: "#FF3358" },
-  { href: "/blueprint", label: "BLUEPRINT", icon: Layers, color: "#00C875" },
-  { href: "/guessr", label: "GUESSR", icon: Trophy, color: "#FFC82C" },
-  { href: "/volumes", label: "VOLUMES", icon: Sparkles, color: "#7C4DFF" },
-  { href: "/dossier", label: "DOSSIER", icon: ScrollText, color: "#FF6FAE" },
+  { href: "/", label: "COVER", icon: BookOpen, description: "Your next challenge" },
+  { href: "/chamber", label: "CHAMBER", icon: Flame, description: "Plan a practice session" },
+  { href: "/shell-break", label: "SHELL BREAK", icon: Crosshair, description: "Solve a challenge" },
+  { href: "/tree", label: "JUTSU TREE", icon: GitBranch, description: "Explore related skills" },
+  { href: "/intel", label: "INTEL", icon: Building2, description: "Research target companies" },
+  { href: "/blueprint", label: "BLUEPRINT", icon: Layers, description: "Sketch a system design" },
+  { href: "/guessr", label: "GUESSR", icon: Trophy, description: "Guess a problem rating" },
+  { href: "/volumes", label: "VOLUMES", icon: Sparkles, description: "Browse the curriculum" },
+  { href: "/dossier", label: "DOSSIER", icon: ScrollText, description: "Review your training profile" },
 ];
 
 const QUICK_PROMPTS = [
@@ -56,7 +52,7 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<MangaMode>("color");
   const [soundOn, setSoundOn] = useState(true);
   const [progressionOpen, setProgressionOpen] = useState(false);
-  const [userXp, setUserXp] = useState(2450);
+
 
   // Ctrl+K Quick Manga Search
   const [searchOpen, setSearchOpen] = useState(false);
@@ -92,6 +88,7 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        document.getElementById("chapter-menu")?.hidePopover();
         setSearchOpen((prev) => !prev);
       } else if (e.key === "Escape") {
         setSearchOpen(false);
@@ -115,11 +112,6 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
     setMode(next);
     applyMode(next);
     localStorage.setItem("buckshot-manga-mode", next);
-  };
-
-  const toggleDarkMode = () => {
-    const next: MangaMode = mode === "midnight" ? "color" : "midnight";
-    switchMode(next);
   };
 
   const handleSoundToggle = () => {
@@ -156,7 +148,7 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
   };
 
   const searchItems = [
-    ...NAV_TABS.map((t) => ({ title: t.label, sub: "Chapter Page", href: t.href, tag: "PAGE" })),
+    ...NAV_TABS.map((t) => ({ title: t.label, sub: t.description, href: t.href, tag: "PAGE" })),
     ...SEED_PROBLEMS.map((p) => ({
       title: p.title,
       sub: `${p.volumeName} · PL ${p.rating} · ${p.topic}`,
@@ -178,151 +170,38 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--paper-bg)] text-[var(--ink)] transition-colors duration-200">
-      {/* Top Manga Book Masthead */}
-      <header className="sticky top-0 z-40 border-b-4 border-[var(--border-ink)] bg-[var(--header-bg)] backdrop-blur-md transition-colors">
-        <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
-          {/* Logo Stamp */}
-          <Link href="/" onClick={() => playSfx("click")} className="flex items-center gap-2.5 group">
-            <div className="relative bg-[#FF3358] text-white border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] px-3 py-1 -rotate-2 group-hover:rotate-0 transition-transform">
-              <span className="font-manga text-2xl sm:text-3xl tracking-wider leading-none block">
-                BUCKSHOT
-              </span>
-            </div>
-            <div className="hidden 2xl:flex flex-col leading-tight">
-              <span className="text-[11px] font-black tracking-widest uppercase text-[var(--ink)]">
-                SHONEN AI INTERVIEW BOOK
-              </span>
-              <span className="text-[10px] font-bold uppercase text-[#FF3358]">
-                VOL. 01–05 · FULL COLOR &amp; DARK MODE
-              </span>
-            </div>
-          </Link>
-
-          {/* Chapter Ribbon Tabs */}
-          <nav className="flex items-center gap-1.5 flex-wrap">
-            {NAV_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const active = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
-
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  onClick={() => playSfx("click")}
-                  style={{
-                    backgroundColor: active ? tab.color : "var(--panel-bg)",
-                    color: active ? "#121218" : "var(--ink)",
-                  }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-black tracking-wide uppercase border-2 border-[var(--border-ink)] transition-all ${
-                    active
-                      ? "shadow-[3px_3px_0px_var(--shadow-ink)] -translate-y-0.5"
-                      : "hover:-translate-y-0.5 shadow-[2px_2px_0px_var(--shadow-ink)] hover:opacity-90"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 stroke-[2.6]" />
-                  <span>{tab.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Utilities: Rank / XP Pill + Light/Dark Quick Toggle + Manga Theme Switcher + SFX Toggle + Search */}
-          <div className="flex items-center gap-2">
-            {/* Shonen Rank & Quests Pill */}
-            <button
-              onClick={() => {
-                playSfx("click");
-                setProgressionOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#121218] text-[#FFC82C] border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-[10px] font-black uppercase hover:bg-[#202132] transition-colors"
-              title="View Shonen Exam Progression, Daily Quests & Grimoire of Defeats"
-            >
-              <span>⚡ JŌNIN</span>
-              <span className="hidden md:inline font-mono text-white/80">· {userXp} XP</span>
-            </button>
-
-            {/* Direct Light/Dark Quick Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className={`p-1.5 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-xs font-black flex items-center gap-1 transition-all ${
-                mode === "midnight"
-                  ? "bg-[#7C4DFF] text-white"
-                  : "bg-[#FFC82C] text-[#121218]"
-              }`}
-              title={mode === "midnight" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {mode === "midnight" ? (
-                <>
-                  <Moon className="w-4 h-4 fill-current" />
-                  <span className="hidden sm:inline text-[10px] font-black uppercase">DARK</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-4 h-4 fill-current" />
-                  <span className="hidden sm:inline text-[10px] font-black uppercase">LIGHT</span>
-                </>
-              )}
-            </button>
-
-            {/* SFX Mute/Unmute */}
-            <button
-              onClick={handleSoundToggle}
-              className="p-1.5 border-2 border-[var(--border-ink)] bg-[var(--panel-bg)] shadow-[2px_2px_0px_var(--shadow-ink)] hover:bg-[#00C2FF]/20 transition-colors"
-              title={soundOn ? "Mute Comic Audio SFX" : "Unmute Comic Audio SFX"}
-            >
-              {soundOn ? (
-                <Volume2 className="w-4 h-4 text-[#00C2FF]" />
-              ) : (
-                <VolumeX className="w-4 h-4 text-[var(--ink-muted)]" />
-              )}
-            </button>
-
-            {/* Cmd+K Search */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--panel-bg)] text-[var(--ink)] border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] text-[11px] font-black hover:bg-[#00C2FF]/25"
-              title="Quick Manga Index (Ctrl+K)"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">INDEX</span>
-              <kbd className="bg-[var(--border-ink)] text-[var(--paper-bg)] px-1 text-[9px] font-mono">⌘K</kbd>
-            </button>
-
-            {/* 3-Way Manga Theme Switcher */}
-            <div className="flex items-center border-2 border-[var(--border-ink)] bg-[var(--panel-bg)] shadow-[3px_3px_0px_var(--shadow-ink)] overflow-hidden">
-              <button
-                onClick={() => switchMode("color")}
-                title="Full-Color Shonen Manga"
-                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 transition-colors ${
-                  mode === "color" ? "bg-[#FFC82C] text-[#121218]" : "text-[var(--ink)] hover:opacity-80"
-                }`}
-              >
-                <Palette className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">COLOR</span>
-              </button>
-              <button
-                onClick={() => switchMode("ink")}
-                title="Classic B&W Halftone Ink"
-                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 border-x-2 border-[var(--border-ink)] transition-colors ${
-                  mode === "ink" ? "bg-[#121218] text-white" : "text-[var(--ink)] hover:opacity-80"
-                }`}
-              >
-                <Contrast className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">B&amp;W</span>
-              </button>
-              <button
-                onClick={() => switchMode("midnight")}
-                title="Midnight Shonen Dark Mode"
-                className={`px-2 py-1 text-[11px] font-black flex items-center gap-1 transition-colors ${
-                  mode === "midnight" ? "bg-[#7C4DFF] text-white" : "text-[var(--ink)] hover:opacity-80"
-                }`}
-              >
-                <Moon className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">NIGHT</span>
-              </button>
+      <header className="sticky top-0 z-40 border-b border-[var(--border-muted)] bg-[var(--header-bg)] backdrop-blur-md">
+        <nav aria-label="Main navigation" className="mx-auto flex h-14 max-w-[1440px] items-center gap-1 px-3 sm:h-16 sm:gap-5 sm:px-6">
+          <Link href="/" className="mr-auto font-manga text-2xl italic tracking-wide sm:text-3xl">BUCKSHOT</Link>
+          <Link href="/shell-break" aria-current={pathname.startsWith("/shell-break") ? "page" : undefined}
+            className="px-1 py-3 text-sm font-semibold hover:underline aria-[current=page]:underline">Practice</Link>
+          <button onClick={() => setProgressionOpen(true)} className="px-1 py-3 text-sm font-semibold hover:underline">Progress</button>
+          <button aria-label="Search chapters and challenges" onClick={() => setSearchOpen(true)}
+            className="inline-flex min-h-11 min-w-9 items-center justify-center gap-2 text-sm hover:opacity-70">
+            <Search size={17} /><span className="hidden sm:inline">Search</span>
+          </button>
+          <button popoverTarget="chapter-menu" aria-label="Chapters and settings"
+            className="inline-flex min-h-11 min-w-9 items-center justify-center gap-2 text-sm hover:opacity-70">
+            <Menu size={20} /><span className="hidden sm:inline">Menu</span>
+          </button>
+          <div id="chapter-menu" popover="auto" aria-label="Chapters and settings"
+            className="fixed inset-auto right-2 top-14 m-0 max-h-[75dvh] w-80 max-w-[95vw] overflow-y-auto rounded-lg border border-[var(--border-muted)] bg-[var(--panel-bg)] p-3 text-[var(--ink)] shadow-xl sm:right-[max(1.5rem,calc((100vw-1392px)/2))] sm:top-16">
+            {NAV_TABS.map(({href, label, icon: Icon, description}) => (
+              <Link key={href} href={href} aria-current={(href === "/" ? pathname === href : pathname.startsWith(href)) ? "page" : undefined}
+                onClick={() => document.getElementById("chapter-menu")?.hidePopover()}
+                className="flex items-center gap-3 rounded px-2 py-2 hover:bg-[var(--subpanel-bg)] aria-[current=page]:bg-[var(--subpanel-bg)]">
+                <Icon size={16} /><span><span className="block text-sm font-bold capitalize">{label.toLowerCase()}</span>
+                <span className="text-xs text-[var(--ink-muted)]">{description}</span></span>
+              </Link>
+            ))}
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-[var(--border-muted)] px-2 pt-3 text-sm">
+              <label>Theme <select value={mode} onChange={(e) => switchMode(e.target.value as MangaMode)} className="bg-[var(--panel-bg)] p-1">
+                <option value="color">Color</option><option value="ink">Ink</option><option value="midnight">Midnight</option>
+              </select></label>
+              <button aria-pressed={soundOn} onClick={handleSoundToggle}>Sound {soundOn ? "on" : "off"}</button>
             </div>
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Main Manga Book Spread Area */}
@@ -411,7 +290,7 @@ export function MangaShell({ children }: { children: React.ReactNode }) {
               alt="Summon Sensei Reiko"
               className="w-9 h-9 rounded-full object-cover border-2 border-[var(--border-ink)] manga-unlocked-pop"
             />
-            <div className="text-left leading-tight">
+            <div className="hidden sm:block text-left leading-tight">
               <div className="font-manga text-lg tracking-wider">ASK SENSEI REIKO</div>
               <div className="text-[9px] font-black uppercase text-[#FFC82C] flex items-center gap-1">
                 <MessageCircle className="w-2.5 h-2.5" /> DOSSIER-AWARE COACH
