@@ -12,7 +12,7 @@ import {
   Zap,
   ShieldCheck,
 } from "lucide-react";
-import { SenseiAvatar } from "@/components/SenseiAvatar";
+
 import { MANGA_VOLUMES } from "@/lib/seed-data";
 import { playSfx } from "@/lib/sound";
 
@@ -31,6 +31,8 @@ interface BootstrapData {
     slug: string;
     title: string;
     volumeNumber: number;
+    topic: string;
+    lastAttemptAt: string | null;
     solved: boolean;
     unlockedCount: number;
     totalPanels: number;
@@ -40,16 +42,35 @@ interface BootstrapData {
 export default function HomePage() {
   const [data, setData] = useState<BootstrapData | null>(null);
 
+  const [failed, setFailed] = useState(false);
+
   useEffect(() => {
-    fetch("/api/bootstrap")
-      .then((r) => r.json())
+    const controller = new AbortController();
+    fetch("/api/bootstrap", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Progress unavailable");
+        return response.json();
+      })
       .then(setData)
-      .catch(console.error);
+      .catch(() => {
+        if (!controller.signal.aborted) setFailed(true);
+      });
+    return () => controller.abort();
   }, []);
 
-  const totalPanels = data?.problems.reduce((a, p) => a + p.totalPanels, 0) ?? 20;
-  const coloredPanels = data?.problems.reduce((a, p) => a + p.unlockedCount, 0) ?? 0;
-
+  const problems = data?.problems ?? [];
+  const unfinished = problems.filter((problem) => !problem.solved);
+  const recent = unfinished
+    .filter((problem) => problem.lastAttemptAt)
+    .sort((a, b) => b.lastAttemptAt!.localeCompare(a.lastAttemptAt!))[0];
+  const challenge = recent ?? unfinished[0];
+  const started = problems.some((problem) => problem.lastAttemptAt || problem.solved);
+  const loading = !data && !failed;
+  const totalPanels = problems.reduce((sum, problem) => sum + problem.totalPanels, 0);
+  const coloredPanels = problems.reduce((sum, problem) => sum + problem.unlockedCount, 0);
+  let action = "Browse challenges";
+  if (recent) action = "Continue challenge";
+  else if (challenge) action = started ? "Start next challenge" : "Start your first challenge";
   return (
     <div className="space-y-8">
       {/* DOUBLE-PAGE MANGA HERO SPREAD */}
@@ -58,103 +79,56 @@ export default function HomePage() {
           {/* Center Book Spine Shadow on Desktop */}
           <div className="hidden lg:block absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 book-spread-spine pointer-events-none z-20" />
 
-          {/* LEFT PAGE: Title Splash + Philosophy + Action Buttons */}
-          <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between bg-[var(--card-bg)] text-[var(--ink)] halftone-dots relative">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-[#FF3358] text-white text-xs font-black px-2.5 py-1 border-2 border-[var(--border-ink)] shadow-[2px_2px_0px_var(--shadow-ink)] uppercase">
-                  ISSUE #01 · FULL COLOR &amp; DARK MODE
-                </span>
-                <span className="bg-[#FFC82C] text-[#121218] text-xs font-black px-2.5 py-1 border-2 border-[var(--border-ink)] uppercase">
-                  {data?.aiStatus || "MULTI-PROVIDER AI COACH READY"}
-                </span>
-              </div>
-
-              <h1 className="font-manga text-5xl sm:text-7xl leading-[0.95] tracking-wider text-[var(--ink)]">
-                LOAD THE LOGIC.
-                <span className="block text-[#FF3358] drop-shadow-[3px_3px_0px_var(--shadow-ink)]">
-                  FIRE THE PROOF.
-                </span>
+          <div className="lg:col-span-6 flex flex-col justify-center gap-6 p-6 sm:p-10 bg-[var(--card-bg)] text-[var(--ink)]">
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+              <span className="h-1 w-8 bg-[var(--crimson)]" aria-hidden="true" />
+              Shell Break {challenge && `· Volume ${challenge.volumeNumber}`}
+            </div>
+            <div aria-live="polite" aria-busy={loading}>
+              <h1 className="font-manga text-5xl sm:text-6xl lg:text-7xl leading-none tracking-wide">
+                {challenge?.title ?? (loading ? "Loading your challenge…" : data && problems.length ? "Every challenge solved." : "Shell Break arena")}
               </h1>
-
-              <p className="text-sm sm:text-base font-bold text-[var(--ink-secondary)] leading-relaxed max-w-xl">
-                Stop memorizing 400 puzzle templates.{" "}
-                <strong className="bg-[#FFC82C] text-[#121218] px-1">BUCKSHOT</strong> is an anime-styled AI
-                engineering dojo built on cognitive scaffolding: every unsolved breakthrough starts
-                in stark black-and-white ink and{" "}
-                <span className="text-[#FF3358] font-black">floods with full anime color</span> the
-                moment you prove your invariant to Sensei Reiko.
+              <p className="mt-4 text-base leading-relaxed text-[var(--ink-secondary)] max-w-md">
+                {failed ? "Your saved progress is unavailable. Open the arena to choose a challenge."
+                  : challenge ? "Prove your reasoning to Sensei Reiko. Each breakthrough brings a panel into color."
+                  : data && problems.length ? "Revisit a proof or practice a challenge again."
+                  : "Explore the manga challenge library."}
               </p>
-
-              {/* Sensei Welcome Speech Bubble */}
-              <div className="flex items-start gap-4 pt-2">
-                <SenseiAvatar expression="idle" sfx="YO!" size="md" />
-                <div className="relative speech-bubble-left bg-[var(--card-bg)] border-[3px] border-[var(--border-ink)] shadow-[4px_4px_0px_var(--shadow-ink)] p-3.5 text-xs sm:text-sm font-bold leading-snug flex-1 text-[var(--ink)]">
-                  &ldquo;Welcome back,{" "}
-                  <span className="text-[#FF3358] font-black">{data?.profile.codename ?? "SHADOW_DEV"}</span>.
-                  Your Power Rating sits at{" "}
-                  <span className="bg-[#00C2FF]/30 px-1 border border-[#00C2FF]/40">
-                    PL {data?.profile.overallRating ?? 1480}
-                  </span>
-                  . Step into <strong>Shell Break</strong> and shatter all 3 panels before touching
-                  the keyboard!&rdquo;
+            </div>
+            {challenge && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">{challenge.topic} · {challenge.unlockedCount} of {challenge.totalPanels} panels unlocked</p>
+                <div className="flex gap-1 max-w-xs" aria-hidden="true">
+                  {Array.from({ length: challenge.totalPanels }, (_, i) => (
+                    <span key={i} className={`h-2 flex-1 border border-[var(--ink)] ${i < challenge.unlockedCount ? "bg-[var(--crimson)]" : "bg-[var(--subpanel-bg)]"}`} />
+                  ))}
                 </div>
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-6">
-              <Link
-                href="/shell-break/monotonic-stack-skyline"
+            )}
+            {!loading && (
+              <Link href={challenge ? `/shell-break/${challenge.slug}` : "/shell-break"}
                 onClick={() => playSfx("click")}
-                className="manga-btn bg-[#FF3358] text-white px-5 py-3 text-sm flex items-center gap-2"
-              >
-                <Crosshair className="w-4 h-4" />
-                ENTER SHELL BREAK ARENA
-                <ArrowRight className="w-4 h-4" />
+                className="manga-btn inline-flex self-start items-center gap-3 bg-[#FFC82C] px-5 py-3 text-sm text-[#121218]">
+                {action} <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
-              <Link
-                href="/chamber"
-                onClick={() => playSfx("click")}
-                className="manga-btn bg-[#FFC82C] text-[#121218] px-5 py-3 text-sm flex items-center gap-2"
-              >
-                <Flame className="w-4 h-4" />
-                OPEN THE CHAMBER
-              </Link>
-              <Link
-                href="/blueprint"
-                onClick={() => playSfx("click")}
-                className="manga-btn bg-[#00C2FF] text-[#121218] px-4 py-3 text-sm flex items-center gap-2"
-              >
-                <Layers className="w-4 h-4" />
-                VOICE BLUEPRINT
-              </Link>
-              <Link
-                href="/guessr"
-                onClick={() => playSfx("click")}
-                className="manga-btn bg-[#00C875] text-[#121218] px-4 py-3 text-sm flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                BOUNTY GUESSR
-              </Link>
-            </div>
+            )}
           </div>
-
           {/* RIGHT PAGE: Full-Color Custom Shonen Spread Artwork + Live Stats Overlay */}
-          <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-[470px] border-t-4 lg:border-t-0 lg:border-l-4 border-[var(--border-ink)] bg-[#121218] overflow-hidden manga-color-layer">
+          <div className="lg:col-span-6 relative min-h-[240px] lg:min-h-[420px] border-t-4 lg:border-t-0 lg:border-l-4 border-[var(--border-ink)] bg-[#121218] overflow-hidden manga-color-layer">
             <img
               src="/art/hero-spread.jpg"
               alt="BUCKSHOT Shonen Engineering Command Dojo"
-              className="w-full h-full object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C14]/90 via-transparent to-transparent" />
 
-            {/* Top-Right Manga Chapter Stamp */}
+            {data && <>
             <div className="absolute top-4 right-4 bg-[#FFC82C] text-[#121218] border-[3px] border-[#121218] shadow-[4px_4px_0px_#121218] px-3 py-1.5 rotate-2">
               <div className="font-manga text-xl leading-none">
-                RANK {data?.profile.rank.grade ?? "B"} · PL {data?.profile.overallRating ?? 1480}
+                RANK {data.profile.rank.grade} · PL {data.profile.overallRating}
               </div>
               <div className="text-[10px] font-black uppercase">
-                {data?.profile.rank.title ?? "B-RANK TACTICIAN"}
+                {data.profile.rank.title}
               </div>
             </div>
 
@@ -169,16 +143,17 @@ export default function HomePage() {
               <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_#00C2FF] p-2.5">
                 <div className="text-[10px] font-black text-[var(--ink-muted)] uppercase">STREAK FLAME</div>
                 <div className="font-manga text-2xl text-[#00C2FF]">
-                  {data?.profile.streakDays ?? 7} DAYS
+                  {data.profile.streakDays} DAYS
                 </div>
               </div>
               <div className="bg-[var(--card-bg)] text-[var(--ink)] border-[3px] border-[var(--border-ink)] shadow-[3px_3px_0px_#FFC82C] p-2.5">
                 <div className="text-[10px] font-black text-[var(--ink-muted)] uppercase">TOTAL XP</div>
                 <div className="font-manga text-2xl text-[var(--ink)]">
-                  {data?.profile.xp ?? 2450}
+                  {data.profile.xp}
                 </div>
               </div>
             </div>
+            </>}
           </div>
         </div>
       </section>

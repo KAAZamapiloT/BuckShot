@@ -43,6 +43,7 @@ export async function GET() {
           totalPanels: cruxes.length,
           unlockedCount: unlocked.length,
           reasoningScore: att?.reasoningScore ?? 0,
+          lastAttemptAt: att?.updatedAt ?? null,
           solved: att?.solved ?? false,
         };
       }),
